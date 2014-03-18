@@ -17,15 +17,16 @@ Description:
   * To distribute the standard time zone database in a cabal package,
     so that it can be used in Haskell programs uniformly on all
     platforms.
-  * To provide a library that can read time zone info files
-    (aka. Olson files), and does time zone conversions in a *pure* and
-    *efficient* way.
   .
-  The current version ships the 2014a version of the time zone
-  database. See: http://www.iana.org/time-zones for more info.
+  * To provide a library that can read time zone info files
+    (aka. Olson files), and does time zone conversions in a /pure/ and
+    /efficient/ way.
+  .
+  The current version ships the @2014a@ version of the time zone
+  database. See: <http://www.iana.org/time-zones> for more info.
   .
   The package is currently in a draft phase, I'm still experimenting
-  with different ideas wrt. scope/API/implementation/etc. All comments
+  with different ideas wrt. scope\/API\/implementation\/etc. All comments
   are welcome!
 
 Data-Dir: tzdata
@@ -48,4 +49,8 @@ Library
   Default-Language: Haskell2010
   GHC-Options: -Wall
   Build-Depends:
-    base >= 4.6 && < 5
+    base               >= 4        && < 5,
+    binary             >= 0.5      && < 0.8,
+    bytestring         >= 0.9      && < 0.11,
+    time               >= 1.2      && < 1.5,
+    vector             >= 0.9      && < 0.11
