@@ -1,0 +1,51 @@
+Name: tz
+Version: 0.0.0.1
+License: Apache-2.0
+License-File: LICENSE
+Author: Mihaly Barasz, Gergely Risko
+Maintainer: Mihaly Barasz <klao@nilcons.com>, Gergely Risko <errge@nilcons.com>
+Cabal-Version: >= 1.10
+Build-Type: Simple
+Category: Data
+Stability: experimental
+Homepage: https://github.com/nilcons/haskell-tz
+Bug-Reports: https://github.com/nilcons/haskell-tz/issues
+Synopsis: Time zones database and library
+Description:
+  This package has two main goals:
+  .
+  * To distribute the standard time zone database in a cabal package,
+    so that it can be used in Haskell programs uniformly on all
+    platforms.
+  * To provide a library that can read time zone info files
+    (aka. Olson files), and does time zone conversions in a *pure* and
+    *efficient* way.
+  .
+  The current version ships the 2014a version of the time zone
+  database. See: http://www.iana.org/time-zones for more info.
+  .
+  The package is currently in a draft phase, I'm still experimenting
+  with different ideas wrt. scope/API/implementation/etc. All comments
+  are welcome!
+
+Data-Dir: tzdata
+-- We have to explicitly list all the directories because of Cabal's limitations.
+Data-Files: *.tab *.zone Chile/*.zone Etc/*.zone Canada/*.zone Indian/*.zone Africa/*.zone Asia/*.zone Antarctica/*.zone Europe/*.zone America/*.zone America/Kentucky/*.zone America/North_Dakota/*.zone America/Argentina/*.zone America/Indiana/*.zone Mexico/*.zone Brazil/*.zone Atlantic/*.zone Arctic/*.zone Australia/*.zone Pacific/*.zone US/*.zone
+
+Extra-Source-Files:
+  README.md
+
+Source-Repository head
+  Type: git
+  Location: https://github.com/nilcons/haskell-tz.git
+
+Library
+  Exposed-Modules:
+    Data.Time.Zones,
+    Data.Time.Zones.Types,
+    Data.Time.Zones.Read
+  Other-Modules: Paths_tz
+  Default-Language: Haskell2010
+  GHC-Options: -Wall
+  Build-Depends:
+    base >= 4.6 && < 5
