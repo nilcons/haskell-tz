@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Time.Zones.Read (
-  loadTZ,
+  loadTZFromFile,
   olsonGet,
   OlsonInfo(..),
   loadOlsonInfo,
@@ -19,8 +19,11 @@ import qualified Data.Vector as VB
 import Data.Int
 import Data.Time.Zones.Types
 
-loadTZ :: FilePath -> IO TZ
-loadTZ fname = runGet olsonGet <$> BL.readFile fname
+-- | Reads and parses a time zone information file (in tzfile(5)
+-- aka. Olson file format) and returns the corresponding TZ data
+-- structure.
+loadTZFromFile :: FilePath -> IO TZ
+loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
 
 olsonGet :: Get TZ
 olsonGet = do
