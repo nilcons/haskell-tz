@@ -3,10 +3,13 @@
 module Data.Time.Zones (
   module Data.Time.Zones.Types,
   loadTZFromFile,
+  loadTZFromDB,
+  loadSystemTZ,
   diffForUTC,
   timeZoneForUTC,
   timeZoneForUTCTime,
   utcToLocalTimeTZ,
+  utcTZ,
   ) where
 
 import Data.Bits (shiftR)
@@ -17,7 +20,7 @@ import Data.Time.Clock.POSIX
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
 import Data.Time.Zones.Types
-import Data.Time.Zones.Read (loadTZFromFile)
+import Data.Time.Zones.Read
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
@@ -53,6 +56,10 @@ utcToLocalTimeTZ tz ut@(UTCTime day dtime) = LocalTime day' tod
     (d', h) = h' `divMod` 24
     day' = fromIntegral d' `addDays` day
     tod = TimeOfDay h m (realToFrac s)
+
+-- | `TZ` structure for UTC.
+utcTZ :: TZ
+utcTZ = TZ (VU.singleton minBound) (VU.singleton 0) (VB.singleton (False, "UTC"))
 
 -- | Returns the largest index `i` such that `v ! i <= t`.
 --

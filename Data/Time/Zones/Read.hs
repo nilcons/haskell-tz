@@ -2,6 +2,8 @@
 
 module Data.Time.Zones.Read (
   loadTZFromFile,
+  loadSystemTZ,
+  loadTZFromDB,
   olsonGet,
   OlsonInfo(..),
   loadOlsonInfo,
@@ -18,12 +20,38 @@ import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
 import Data.Int
 import Data.Time.Zones.Types
+import System.Environment
+import System.IO.Error
+
+import Paths_tz hiding (version)
 
 -- | Reads and parses a time zone information file (in tzfile(5)
 -- aka. Olson file format) and returns the corresponding TZ data
 -- structure.
 loadTZFromFile :: FilePath -> IO TZ
 loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
+
+-- | Looks for the time zone file in standard directory, which is
+-- @/usr/share/zoneinfo@ or if the @TZDIR@ environment variable is
+-- set, then there.
+loadSystemTZ :: String -> IO TZ
+loadSystemTZ tzName = do
+  dir <- getEnvDefault "TZDIR" "/usr/share/zoneinfo"
+  loadTZFromFile $ dir ++ "/" ++ tzName
+
+getEnvDefault :: String -> String -> IO String
+getEnvDefault var fallback =
+  getEnv var `catchIOError`
+  (\e -> if isDoesNotExistError e then return fallback else ioError e)
+
+-- | Reads the corresponding file from the time zone database shipped
+-- with this package.
+loadTZFromDB :: String -> IO TZ
+loadTZFromDB tzName = do
+  -- TODO(klao): this probably won't work on Windows.
+  fn <- getDataFileName $ tzName ++ ".zone"
+  loadTZFromFile fn
+
 
 olsonGet :: Get TZ
 olsonGet = do
