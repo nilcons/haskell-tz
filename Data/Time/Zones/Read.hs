@@ -5,12 +5,10 @@ module Data.Time.Zones.Read (
   loadSystemTZ,
   loadTZFromDB,
   olsonGet,
-  OlsonInfo(..),
-  loadOlsonInfo,
   ) where
 
 import Control.Applicative
-import Control.Monad (unless, replicateM)
+import Control.Monad (unless)
 import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString.Char8 as BS
@@ -52,20 +50,17 @@ loadTZFromDB tzName = do
   fn <- getDataFileName $ tzName ++ ".zone"
   loadTZFromFile fn
 
-
 olsonGet :: Get TZ
 olsonGet = do
   version <- olsonHeader
   case () of
     () | version == '\0' -> olsonGetWith 4 getTime32
-    -- ()  -> olsonGetWith 4 getTime32
     () | version `elem` ['2', '3'] -> do
       skipOlson0
       _ <- olsonHeader
       olsonGetWith 8 getTime64
       -- TODO(klao): read the rule string
     _ -> fail $ "olsonGet: invalid version character: " ++ show version
-
 
 olsonHeader :: Get Char
 olsonHeader = do
@@ -85,8 +80,6 @@ skipOlson0 = do
   tzh_charcnt <- getInt32
   skip $ (4 * tzh_timecnt) + tzh_timecnt + (6 * tzh_typecnt) + tzh_charcnt +
     (8 * tzh_leapcnt) + tzh_ttisstdcnt + tzh_ttisgmtcnt
-
-
 
 olsonGetWith :: Int -> Get Int64 -> Get TZ
 olsonGetWith szTime getTime = do
@@ -135,53 +128,3 @@ getTime32 = fromIntegral <$> getInt32
 getTime64 :: Get Int64
 {-# INLINE getTime64 #-}
 getTime64 = fromIntegral <$> getWord64be
-
---------------------------------------------------------------------------------
--- Debugging:
-
-loadOlsonInfo :: FilePath -> IO OlsonInfo
-loadOlsonInfo fname = runGet olsonInfoGet <$> BL.readFile fname
-
-
-data OlsonInfo = OlsonInfo {
-  transCnt :: Int,
-  infosCnt :: Int,
-  gmtCnt :: Int,
-  stdCnt :: Int,
-  leapCnt :: Int,
-  olsonInfos :: [(Int, Bool, String)],
-  isGmt :: [Bool],
-  isStd :: [Bool]
-  } deriving (Eq,Show)
-
-olsonInfoGet :: Get OlsonInfo
-olsonInfoGet = do
-  version <- olsonHeader
-  case () of
-    () | version == '\0' -> olsonInfoGetWith 4 getTime32
-    -- ()  -> olsonInfoGetWith 4 getTime32
-    () | version `elem` ['2', '3'] -> do
-      skipOlson0
-      _ <- olsonHeader
-      olsonInfoGetWith 8 getTime64
-      -- TODO(klao): read the rule string
-    _ -> fail $ "olsonGet: invalid version character: " ++ show version
-
-olsonInfoGetWith :: Int -> Get Int64 -> Get OlsonInfo
-olsonInfoGetWith szTime getTime = do
-  tzh_ttisgmtcnt <- getInt32
-  tzh_ttisstdcnt <- getInt32
-  tzh_leapcnt <- getInt32
-  tzh_timecnt <- getInt32
-  tzh_typecnt <- getInt32
-  tzh_charcnt <- getInt32
-  _transitions <- VU.replicateM tzh_timecnt getTime
-  _indices <- VU.replicateM tzh_timecnt getInt8
-  infos <- VU.replicateM tzh_typecnt getTTInfo
-  abbrs <- getByteString tzh_charcnt
-  skip $ tzh_leapcnt * (szTime + 4)
-  isStds <- replicateM tzh_ttisstdcnt get
-  isGmts <- replicateM tzh_ttisgmtcnt get
-  let nameIt (o,d,ni) = (o, d, abbrForInd ni abbrs)
-      lInfos = map nameIt $ VU.toList infos
-  return $ OlsonInfo tzh_timecnt tzh_typecnt tzh_ttisgmtcnt tzh_ttisstdcnt tzh_leapcnt lInfos isGmts isStds
