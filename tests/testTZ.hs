@@ -123,6 +123,14 @@ prop_Jerusalem_correct_LocalTime = checkLocalTime "Asia/Jerusalem" $ Just (-1641
 prop_Antarctica_Palmer_correct_LocalTime = checkLocalTime "Antarctica/Palmer" Nothing
 prop_Melbourne_correct_LocalTime = checkLocalTime "Australia/Melbourne" Nothing
 
+case_DB_utc_is_utc = do
+  tz <- loadTZFromDB "UTC"
+  tz @?= utcTZ
 
 main :: IO ()
-main = $defaultMainGenerator
+main = do
+  -- When we are running 'cabal test' the package is not yet
+  -- installed, so we want to use the data directory from within the
+  -- sources.
+  setEnv "tz_datadir" "./tzdata" True
+  $defaultMainGenerator
