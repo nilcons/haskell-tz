@@ -119,7 +119,8 @@ binarySearch v t | n == 1    = 0
 
 -- | Internal representation of LocalTime -> UTCTime conversion result:
 data FromLocal
-  = FLGap
+  = FLGap    { _flIx :: {-# UNPACK #-} !Int
+             , _flRes :: {-# UNPACK #-} !Int64 }
   | FLUnique { _flIx :: {-# UNPACK #-} !Int
              , _flRes :: {-# UNPACK #-} !Int64 }
   | FLDouble { _flIx :: {-# UNPACK #-} !Int
@@ -153,7 +154,7 @@ localToPOSIX (TZ trans diffs _) !lTime = res
     nextTrans = VU.unsafeIndex trans ix'
     cand2 = lTime - fromIntegral (VU.unsafeIndex diffs ix')
     res' = case (cand1 < nextTrans, cand2 >= nextTrans) of
-      (False, False) -> FLGap
+      (False, False) -> FLGap ix cand1
       (True,  False) -> FLUnique ix cand1
       (False, True)  -> FLUnique ix' cand2
       (True,  True)  -> FLDouble ix cand1 cand2
@@ -173,8 +174,11 @@ localToPOSIX (TZ trans diffs _) !lTime = res
 -- before and after the transition. You can always inspect the
 -- 'timeZoneSummerOnly' field of the returned 'TimeZone's to get an
 -- idea what kind of transition was taking place.
+--
+-- TODO(klao): document the LTUNone behavior.
 data LocalToUTCResult
-  = LTUNone
+  = LTUNone { _ltuResult :: UTCTime
+            , _ltuZone :: TimeZone }
   | LTUUnique { _ltuResult :: UTCTime
               , _ltuZone :: TimeZone }
   | LTUAmbiguous { _ltuFirst      :: UTCTime
@@ -201,7 +205,7 @@ localTimeToUTCFull tz@(TZ _ diffs _) (LocalTime day tod) = res
         diff = VU.unsafeIndex diffs i
         (d, tid') = (tid - fromIntegral diff) `divMod'` 86400
     res = case localToPOSIX tz t of
-      FLGap -> LTUNone
+      FLGap i _ -> LTUNone (addDiff i) (timeZoneForIx tz i)
       FLUnique i _ -> LTUUnique (addDiff i) (timeZoneForIx tz i)
       FLDouble i _ _ -> LTUAmbiguous (addDiff i) (addDiff (i+1))
                           (timeZoneForIx tz i) (timeZoneForIx tz (i+1))
@@ -209,6 +213,6 @@ localTimeToUTCFull tz@(TZ _ diffs _) (LocalTime day tod) = res
 localTimeToUTCTZ :: TZ -> LocalTime -> UTCTime
 localTimeToUTCTZ tz lt =
   case localTimeToUTCFull tz lt of
-    LTUNone -> error $ "Invalid LocalTime: " ++ show lt
+    LTUNone ut _ -> ut
     LTUUnique ut _ -> ut
     LTUAmbiguous _ ut _ _ -> ut

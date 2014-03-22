@@ -135,17 +135,29 @@ mkUTC y m d hh mm ss
 
 case_Budapest_LocalToUTC = do
   tz <- loadTZFromDB "Europe/Budapest"
-  let zstd = TimeZone 60 False "CET"
-      zdst = TimeZone 120 True "CEST"
+  let zWinter = TimeZone 60 False "CET"
+      zSummer = TimeZone 120 True "CEST"
+  -- Handle std times:
   localTimeToUTCFull tz (mkLocal 1970 01 01  01 00 00) @?=
-    LTUUnique (mkUTC 1970 01 01  00 00 00) zstd
+    LTUUnique (mkUTC 1970 01 01  00 00 00) zWinter
   localTimeToUTCFull tz (mkLocal 2014 03 23  00 15 15.15) @?=
-    LTUUnique (mkUTC 2014 03 22  23 15 15.15) zstd
-  localTimeToUTCFull tz (mkLocal 2014 03 30  02 15 15) @?= LTUNone
+    LTUUnique (mkUTC 2014 03 22  23 15 15.15) zWinter
+
+  -- Handle time in winter->summer transition:
+  localTimeToUTCFull tz (mkLocal 2014 03 30  02 15 15) @?=
+    LTUNone (mkUTC 2014 03 30  01 15 15) zWinter
+  -- That utc time is acually in dst already:
+  localTimeToUTCFull tz (mkLocal 2014 03 30  03 15 15) @?=
+    LTUUnique (mkUTC 2014 03 30  01 15 15) zSummer
+
+  -- Handle dst times:
   localTimeToUTCFull tz (mkLocal 2014 04 05  06 07 08.987654321999) @?=
-    LTUUnique (mkUTC 2014 04 05  04 07 08.987654321999) zdst
+    LTUUnique (mkUTC 2014 04 05  04 07 08.987654321999) zSummer
+
+  -- Handle time in summer->winter transition:
   localTimeToUTCFull tz (mkLocal 2013 10 27  02 15 15) @?=
-    LTUAmbiguous (mkUTC 2013 10 27  00 15 15) (mkUTC 2013 10 27  01 15 15) zdst zstd
+    LTUAmbiguous (mkUTC 2013 10 27  00 15 15) (mkUTC 2013 10 27  01 15 15)
+      zSummer zWinter
 
 main :: IO ()
 main = do
