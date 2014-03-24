@@ -23,7 +23,6 @@ import Data.Bits (shiftR)
 import Data.Fixed (divMod')
 import Data.Int (Int64)
 import Data.Time
-import Data.Time.Clock.POSIX
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
 import Data.Time.Zones.Types
@@ -52,7 +51,8 @@ timeZoneForUTC tz@(TZ trans _ _) t = timeZoneForIx tz i
 -- | Returns the `TimeZone` for the `TZ` at the given `UTCTime`.
 timeZoneForUTCTime :: TZ -> UTCTime -> TimeZone
 {-# INLINABLE timeZoneForUTCTime #-}
-timeZoneForUTCTime tz = timeZoneForUTC tz . floor . utcTimeToPOSIXSeconds
+timeZoneForUTCTime tz (UTCTime day tid)
+  = timeZoneForUTC tz $ dayTimeToInt64 day tid
 
 -- | Returns the `LocalTime` corresponding to the given `UTCTime` in `TZ`.
 --
@@ -60,9 +60,9 @@ timeZoneForUTCTime tz = timeZoneForUTC tz . floor . utcTimeToPOSIXSeconds
 -- (timeZoneForUTC tz ut) ut@ except when the time difference is not
 -- an integral number of minutes
 utcToLocalTimeTZ :: TZ -> UTCTime -> LocalTime
-utcToLocalTimeTZ tz ut@(UTCTime day dtime) = LocalTime day' tod
+utcToLocalTimeTZ tz (UTCTime day dtime) = LocalTime day' tod
   where
-    diff = diffForUTC tz $ floor $ utcTimeToPOSIXSeconds ut
+    diff = diffForUTC tz $ dayTimeToInt64 day dtime
     (m', s) = (dtime + fromIntegral diff) `divMod'` 60
     (h', m) = m' `divMod` 60
     (d', h) = h' `divMod` 24
