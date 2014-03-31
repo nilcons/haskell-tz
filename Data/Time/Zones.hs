@@ -1,23 +1,25 @@
 {-# LANGUAGE BangPatterns #-}
 
 module Data.Time.Zones (
-  module Data.Time.Zones.Types,
-  loadTZFromFile,
-  loadTZFromDB,
-  loadSystemTZ,
-  loadLocalTZ,
-  diffForUTC,
-  timeZoneForUTC,
+  TZ,
+  utcTZ,
+  -- * Universal -> Local direction
+  diffForPOSIX,
+  timeZoneForPOSIX,
   timeZoneForUTCTime,
   utcToLocalTimeTZ,
-  utcTZ,
-  --
+  -- * Local -> Universal direction
   LocalToUTCResult(..),
   localTimeToUTCFull,
   localTimeToUTCTZ,
   -- TODO(klao): do we want to export these?
   FromLocal(..),
   localToPOSIX,
+  -- * Acquiring `TZ` information
+  loadTZFromFile,
+  loadTZFromDB,
+  loadSystemTZ,
+  loadLocalTZ,
   ) where
 
 import Data.Bits (shiftR)
@@ -31,9 +33,9 @@ import Data.Time.Zones.Read
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
-diffForUTC :: TZ -> Int64 -> Int
-{-# INLINE diffForUTC #-}
-diffForUTC (TZ trans diffs _) t = VU.unsafeIndex diffs $ binarySearch trans t
+diffForPOSIX :: TZ -> Int64 -> Int
+{-# INLINE diffForPOSIX #-}
+diffForPOSIX (TZ trans diffs _) t = VU.unsafeIndex diffs $ binarySearch trans t
 
 timeZoneForIx :: TZ -> Int -> TimeZone
 {-# INLINE timeZoneForIx #-}
@@ -43,9 +45,9 @@ timeZoneForIx (TZ _ diffs infos) i = TimeZone diffMins isDst name
     (isDst, name) = VB.unsafeIndex infos i
 
 -- | Returns the `TimeZone` for the `TZ` at the given POSIX time.
-timeZoneForUTC :: TZ -> Int64 -> TimeZone
-{-# INLINABLE timeZoneForUTC #-}
-timeZoneForUTC tz@(TZ trans _ _) t = timeZoneForIx tz i
+timeZoneForPOSIX :: TZ -> Int64 -> TimeZone
+{-# INLINABLE timeZoneForPOSIX #-}
+timeZoneForPOSIX tz@(TZ trans _ _) t = timeZoneForIx tz i
   where
     i = binarySearch trans t
 
@@ -53,17 +55,17 @@ timeZoneForUTC tz@(TZ trans _ _) t = timeZoneForIx tz i
 timeZoneForUTCTime :: TZ -> UTCTime -> TimeZone
 {-# INLINABLE timeZoneForUTCTime #-}
 timeZoneForUTCTime tz (UTCTime day tid)
-  = timeZoneForUTC tz $ dayTimeToInt64 day tid
+  = timeZoneForPOSIX tz $ dayTimeToInt64 day tid
 
 -- | Returns the `LocalTime` corresponding to the given `UTCTime` in `TZ`.
 --
 -- @utcToLocalTimeTZ tz ut@ is equivalent to @`utcToLocalTime`
--- (`timeZoneForUTC` tz ut) ut@ except when the time difference is not
+-- (`timeZoneForPOSIX` tz ut) ut@ except when the time difference is not
 -- an integral number of minutes
 utcToLocalTimeTZ :: TZ -> UTCTime -> LocalTime
 utcToLocalTimeTZ tz (UTCTime day dtime) = LocalTime day' tod
   where
-    diff = diffForUTC tz $ dayTimeToInt64 day dtime
+    diff = diffForPOSIX tz $ dayTimeToInt64 day dtime
     (m', s) = (dtime + fromIntegral diff) `divMod'` 60
     (h', m) = m' `divMod` 60
     (d', h) = h' `divMod` 24

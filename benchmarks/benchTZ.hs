@@ -28,15 +28,15 @@ utcToLocalNano :: TZ -> Int64 -> Int64
 {-# INLINE utcToLocalNano #-}
 utcToLocalNano tz t = t + 1000000000 * fromIntegral diff
   where
-    diff = diffForUTC tz (t `div` 1000000000)
+    diff = diffForPOSIX tz (t `div` 1000000000)
 
 tzBenchmarks :: TZ -> TimeZoneSeries -> [Benchmark]
 tzBenchmarks tz series = [
   bgroup "rawDiff" [
-     bench "past" $ whnf (diffForUTC tz) (-10000000000), -- Way back in the past
-     bench "epoch" $ whnf (diffForUTC tz) 0,
-     bench "now" $ whnf (diffForUTC tz) 1395572400,
-     bench "future" $ whnf (diffForUTC tz) 10000000000   -- Way in the future
+     bench "past" $ whnf (diffForPOSIX tz) (-10000000000), -- Way back in the past
+     bench "epoch" $ whnf (diffForPOSIX tz) 0,
+     bench "now" $ whnf (diffForPOSIX tz) 1395572400,
+     bench "future" $ whnf (diffForPOSIX tz) 10000000000   -- Way in the future
      ],
   bgroup "utcToLocalNano" [
      bench "past" $ whnf (utcToLocalNano tz) (-4000000000000000000),
@@ -45,7 +45,7 @@ tzBenchmarks tz series = [
      bench "future" $ whnf (utcToLocalNano tz) 4000000000000000000
      ],
   bgroup "rawDiffUTC" [
-     bench "now" $ whnf (diffForUTC utcTZ) 1395572400
+     bench "now" $ whnf (diffForPOSIX utcTZ) 1395572400
      ],
   bgroup "basicUTCToLocalTime" [
     bench "past" $ nf (utcToLocalTime cetTZ) ut0,
@@ -62,10 +62,10 @@ tzBenchmarks tz series = [
     bench "now" $ nf (utcToLocalTime' series) ut1,
     bench "future" $ nf (utcToLocalTime' series) ut2
     ],
-  bgroup "timeZoneForUTC" [
-    bench "past" $ nf (timeZoneForUTC tz) (-10000000000),
-    bench "now" $ nf (timeZoneForUTC tz) 1395572400,
-    bench "future" $ nf (timeZoneForUTC tz) 10000000000
+  bgroup "timeZoneForPOSIX" [
+    bench "past" $ nf (timeZoneForPOSIX tz) (-10000000000),
+    bench "now" $ nf (timeZoneForPOSIX tz) 1395572400,
+    bench "future" $ nf (timeZoneForPOSIX tz) 10000000000
     ],
   bgroup "timeZoneForUTCTime" [
     bench "past" $ nf (timeZoneForUTCTime tz) ut0,

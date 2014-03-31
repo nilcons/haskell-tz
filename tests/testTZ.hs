@@ -57,7 +57,7 @@ checkTimeZone zoneName = prop
       tz <- run $ setup
       run $ print ut
       timeZone <- run $ getTimeZone $ posixSecondsToUTCTime $ fromIntegral ut
-      run $ timeZoneForUTC tz (fromIntegral ut) @?= timeZone
+      run $ timeZoneForPOSIX tz (fromIntegral ut) @?= timeZone
 
 -- See comment for the checkTimeZone.
 checkTimeZone64 :: String -> Property
@@ -73,7 +73,7 @@ checkTimeZone64 zoneName = prop
       -- testing to the Int range.
       pre $ ut > fromIntegral (minBound :: Int)
       timeZone <- run $ getTimeZone $ posixSecondsToUTCTime $ fromIntegral ut
-      run $ timeZoneForUTC tz ut @?= timeZone
+      run $ timeZoneForPOSIX tz ut @?= timeZone
 
 -- On the Int32 range of POSIX times we should mostly replicate the
 -- behavior.
@@ -103,9 +103,9 @@ checkLocalTime zoneName mLower = prop
       run $ utcToLocalTimeTZ tz utcTime @?= utcToLocalTime timeZone utcTime
 
 
-case_utcTZ_is_utc = timeZoneForUTC utcTZ 0 @?= utc
+case_utcTZ_is_utc = timeZoneForPOSIX utcTZ 0 @?= utc
 
-case_utcTZ_zero_diff = diffForUTC utcTZ 0 @?= 0
+case_utcTZ_zero_diff = diffForPOSIX utcTZ 0 @?= 0
 
 prop_Budapest_correct_TimeZone = checkTimeZone64 "Europe/Budapest"
 prop_New_York_correct_TimeZone = checkTimeZone64 "America/New_York"
