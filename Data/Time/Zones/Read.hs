@@ -1,3 +1,11 @@
+{- |
+Module      : Data.Time.Zones
+Copyright   : (C) 2014 Mihaly Barasz
+License     : Apache-2.0, see LICENSE
+Maintainer  : Mihaly Barasz <klao@nilcons.com>
+Stability   : experimental
+-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Time.Zones.Read (
