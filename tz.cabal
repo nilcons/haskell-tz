@@ -22,7 +22,7 @@ Description:
     (aka. Olson files), and does time zone conversions in a /pure/ and
     /efficient/ way.
   .
-  The current version ships the @2014a@ version of the time zone
+  The current version ships the @2014b@ version of the time zone
   database. See: <http://www.iana.org/time-zones> for more info.
   .
   The package is currently in a draft phase, I'm still experimenting
