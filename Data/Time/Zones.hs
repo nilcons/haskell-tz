@@ -5,6 +5,7 @@ module Data.Time.Zones (
   loadTZFromFile,
   loadTZFromDB,
   loadSystemTZ,
+  loadLocalTZ,
   diffForUTC,
   timeZoneForUTC,
   timeZoneForUTCTime,
@@ -56,8 +57,8 @@ timeZoneForUTCTime tz (UTCTime day tid)
 
 -- | Returns the `LocalTime` corresponding to the given `UTCTime` in `TZ`.
 --
--- @utcToLocalTimeTZ tz ut@ is equivalent to @utcToLocalTime
--- (timeZoneForUTC tz ut) ut@ except when the time difference is not
+-- @utcToLocalTimeTZ tz ut@ is equivalent to @`utcToLocalTime`
+-- (`timeZoneForUTC` tz ut) ut@ except when the time difference is not
 -- an integral number of minutes
 utcToLocalTimeTZ :: TZ -> UTCTime -> LocalTime
 utcToLocalTimeTZ tz (UTCTime day dtime) = LocalTime day' tod
@@ -69,7 +70,7 @@ utcToLocalTimeTZ tz (UTCTime day dtime) = LocalTime day' tod
     day' = fromIntegral d' `addDays` day
     tod = TimeOfDay h m (realToFrac s)
 
--- | `TZ` structure for UTC.
+-- | The `TZ` definition for UTC.
 utcTZ :: TZ
 utcTZ = TZ (VU.singleton minBound) (VU.singleton 0) (VB.singleton (False, "UTC"))
 

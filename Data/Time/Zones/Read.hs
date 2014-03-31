@@ -3,6 +3,7 @@
 module Data.Time.Zones.Read (
   loadTZFromFile,
   loadSystemTZ,
+  loadLocalTZ,
   loadTZFromDB,
   olsonGet,
   ) where
@@ -13,6 +14,7 @@ import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Maybe
 import Data.Vector.Generic (stream, unstream)
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
@@ -23,24 +25,48 @@ import System.IO.Error
 
 import Paths_tz hiding (version)
 
--- | Reads and parses a time zone information file (in tzfile(5)
+-- | Reads and parses a time zone information file (in @tzfile(5)@
 -- aka. Olson file format) and returns the corresponding TZ data
 -- structure.
 loadTZFromFile :: FilePath -> IO TZ
 loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
 
--- | Looks for the time zone file in standard directory, which is
--- @/usr/share/zoneinfo@ or if the @TZDIR@ environment variable is
+-- | Looks for the time zone file in the system timezone directory, which is
+-- @\/usr\/share\/zoneinfo@, or if the @TZDIR@ environment variable is
 -- set, then there.
 loadSystemTZ :: String -> IO TZ
 loadSystemTZ tzName = do
-  dir <- getEnvDefault "TZDIR" "/usr/share/zoneinfo"
+  dir <- fromMaybe "/usr/share/zoneinfo" <$> getEnvMaybe "TZDIR"
   loadTZFromFile $ dir ++ "/" ++ tzName
 
-getEnvDefault :: String -> String -> IO String
-getEnvDefault var fallback =
-  getEnv var `catchIOError`
-  (\e -> if isDoesNotExistError e then return fallback else ioError e)
+
+
+-- | Returns the local `TZ` based on the @TZ@ and @TZDIR@
+-- environment variables.
+--
+-- See @tzset(3)@ for details, but basically:
+--
+-- * If @TZ@ environment variable is unset, we @loadTZFromFile \"\/etc\/localtime\"@.
+--
+-- * If @TZ@ is set, but empty, we @loadSystemTZ \"UTC\"@.
+--
+-- * Otherwise, we just @loadSystemTZ@ it.
+--
+-- Note, this means we don't support POSIX-style @TZ@ variables (like
+-- @\"EST5EDT\"@), only those that are explicitly present in the time
+-- zone database.
+loadLocalTZ :: IO TZ
+loadLocalTZ = do
+  tzEnv <- getEnvMaybe "TZ"
+  case tzEnv of
+    Nothing -> loadTZFromFile "/etc/localtime"
+    Just "" -> loadSystemTZ "UTC"
+    Just z -> loadSystemTZ z
+
+getEnvMaybe :: String -> IO (Maybe String)
+getEnvMaybe var =
+  fmap Just (getEnv var) `catchIOError`
+  (\e -> if isDoesNotExistError e then return Nothing else ioError e)
 
 -- | Reads the corresponding file from the time zone database shipped
 -- with this package.
