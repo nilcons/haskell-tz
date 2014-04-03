@@ -24,6 +24,11 @@ mkUTC :: Integer -> Int -> Int -> Int -> Int -> Pico -> UTCTime
 mkUTC y m d hh mm ss
   = UTCTime (fromGregorian y m d) (timeOfDayToTime $ TimeOfDay hh mm ss)
 
+utcToLocalTimeIO :: UTCTime -> IO LocalTime
+utcToLocalTimeIO ut = do
+  tz <- getTimeZone ut
+  return $ utcToLocalTime tz ut
+
 utcToLocalNano :: TZ -> Int64 -> Int64
 {-# INLINE utcToLocalNano #-}
 utcToLocalNano tz t = t + 1000000000 * fromIntegral diff
@@ -51,6 +56,11 @@ tzBenchmarks tz series = [
     bench "past" $ nf (utcToLocalTime cetTZ) ut0,
     bench "now" $ nf (utcToLocalTime cetTZ) ut1,
     bench "future" $ nf (utcToLocalTime cetTZ) ut2
+    ],
+  bgroup "fullUTCToLocalTime" [
+    bench "past" $ nfIO (utcToLocalTimeIO ut0),
+    bench "now" $ nfIO (utcToLocalTimeIO ut1),
+    bench "future" $ nfIO (utcToLocalTimeIO ut2)
     ],
   bgroup "utcToLocalTimeTZ" [
     bench "past" $ nf (utcToLocalTimeTZ tz) ut0,
