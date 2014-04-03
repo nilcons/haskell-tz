@@ -9,15 +9,22 @@ Stability   : experimental
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Time.Zones.Read (
+  -- * Various ways of loading `TZ`
   loadTZFromFile,
   loadSystemTZ,
   loadLocalTZ,
   loadTZFromDB,
+  -- * Reading only the description, no parsing
+  tzDescriptionFromFile,
+  tzDescriptionFromDB,
+  systemTZDescription,
+  -- * Parsing Olson data
   olsonGet,
+  olsonGet',
   ) where
 
 import Control.Applicative
-import Control.Monad (unless)
+import Control.Monad
 import Data.Binary
 import Data.Binary.Get
 import qualified Data.ByteString.Char8 as BS
@@ -46,8 +53,6 @@ loadSystemTZ :: String -> IO TZ
 loadSystemTZ tzName = do
   dir <- fromMaybe "/usr/share/zoneinfo" <$> getEnvMaybe "TZDIR"
   loadTZFromFile $ dir ++ "/" ++ tzName
-
-
 
 -- | Returns the local `TZ` based on the @TZ@ and @TZDIR@
 -- environment variables.
@@ -84,17 +89,42 @@ loadTZFromDB tzName = do
   fn <- getDataFileName $ tzName ++ ".zone"
   loadTZFromFile fn
 
+tzDescriptionFromFile :: FilePath -> IO BL.ByteString
+tzDescriptionFromFile fname = olsonDescription <$> BL.readFile fname
+
+tzDescriptionFromDB :: String -> IO BL.ByteString
+tzDescriptionFromDB tzName = do
+  -- TODO(klao): this probably won't work on Windows.
+  fn <- getDataFileName $ tzName ++ ".zone"
+  tzDescriptionFromFile fn
+
+systemTZDescription :: String -> IO BL.ByteString
+systemTZDescription tzName = do
+  dir <- fromMaybe "/usr/share/zoneinfo" <$> getEnvMaybe "TZDIR"
+  tzDescriptionFromFile $ dir ++ "/" ++ tzName
+
+--------------------------------------------------------------------------------
+
 olsonGet :: Get TZ
-olsonGet = do
+olsonGet = olsonGet' False
+
+olsonGet' :: Bool -> Get TZ
+olsonGet' abridged = do
   version <- olsonHeader
   case () of
     () | version == '\0' -> olsonGetWith 4 getTime32
     () | version `elem` ['2', '3'] -> do
-      skipOlson0
-      _ <- olsonHeader
+      unless abridged $ skipOlson0 >> void olsonHeader
       olsonGetWith 8 getTime64
       -- TODO(klao): read the rule string
     _ -> fail $ "olsonGet: invalid version character: " ++ show version
+
+olsonDescription :: BL.ByteString -> BL.ByteString
+olsonDescription input = flip runGet input $ do
+  version <- olsonHeader
+  if version `elem` ['2', '3']
+    then skipOlson0 >> getRemainingLazyByteString
+    else  return input
 
 olsonHeader :: Get Char
 olsonHeader = do
