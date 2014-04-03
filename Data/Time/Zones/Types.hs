@@ -1,5 +1,5 @@
 {- |
-Module      : Data.Time.Zones
+Module      : Data.Time.Zones.Types
 Copyright   : (C) 2014 Mihaly Barasz
 License     : Apache-2.0, see LICENSE
 Maintainer  : Mihaly Barasz <klao@nilcons.com>

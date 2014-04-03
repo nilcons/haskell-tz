@@ -44,7 +44,8 @@ Library
   Exposed-Modules:
     Data.Time.Zones,
     Data.Time.Zones.Types,
-    Data.Time.Zones.Read
+    Data.Time.Zones.Read,
+    Data.Time.Zones.TH
   Other-Modules: Paths_tz
   Default-Language: Haskell2010
   GHC-Options: -Wall
@@ -52,6 +53,7 @@ Library
     base               >= 4        && < 5,
     binary             >= 0.5      && < 0.8,
     bytestring         >= 0.9      && < 0.11,
+    template-haskell   >= 2.6      && < 2.9,
     time               >= 1.2      && < 1.5,
     vector             >= 0.9      && < 0.11
 

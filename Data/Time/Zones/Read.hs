@@ -1,5 +1,5 @@
 {- |
-Module      : Data.Time.Zones
+Module      : Data.Time.Zones.Read
 Copyright   : (C) 2014 Mihaly Barasz
 License     : Apache-2.0, see LICENSE
 Maintainer  : Mihaly Barasz <klao@nilcons.com>
@@ -20,7 +20,7 @@ module Data.Time.Zones.Read (
   systemTZDescription,
   -- * Parsing Olson data
   olsonGet,
-  olsonGet',
+  parseTZDescription,
   ) where
 
 import Control.Applicative
@@ -125,6 +125,9 @@ olsonDescription input = flip runGet input $ do
   if version `elem` ['2', '3']
     then skipOlson0 >> getRemainingLazyByteString
     else  return input
+
+parseTZDescription :: BL.ByteString -> TZ
+parseTZDescription = runGet (olsonGet' True)
 
 olsonHeader :: Get Char
 olsonHeader = do
