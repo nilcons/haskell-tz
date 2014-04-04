@@ -10,6 +10,7 @@ module Data.Time.Zones.Types (
   TZ(..),
   ) where
 
+import Control.DeepSeq
 import Data.Int
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
@@ -22,3 +23,6 @@ data TZ = TZ {
   -- stored?
   _tzInfos :: !(VB.Vector (Bool, String))   -- (summer, name)
   } deriving (Eq,Show)
+
+instance NFData TZ where
+  rnf (TZ { _tzInfos = infos }) = rnf infos
