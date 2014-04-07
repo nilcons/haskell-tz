@@ -34,3 +34,16 @@ mv tzdist/dest/etc/zoneinfo tzdata
 cd tzdata
 find . -type f -name '[A-Z]*' -exec mv '{}' '{}.zone' \;
 rm localtime posixrules
+
+echo Building symlinked zoneinfo for compilation... >&2
+cd $base/tzdist
+make clean
+make TOPDIR=$base/tzdist/dest CFLAGS=-DHAVE_LINK=0 install
+zdir=$base/tzdist/dest/etc/zoneinfo
+# We don't want these:
+rm -f $zdir/* || true
+rm -rf $zdir/Etc
+
+# Compiling the tool
+cd $base/tools
+# ghc -Wall -O --make -package-db ../dist/package.conf.inplace -XHaskell2010 genZones

@@ -1,0 +1,106 @@
+-- -*- haskell -*-
+{- |
+Module      : Data.Time.Zones.All
+Copyright   : (C) 2014 Mihaly Barasz
+License     : Apache-2.0, see LICENSE
+Maintainer  : Mihaly Barasz <klao@nilcons.com>
+Stability   : experimental
+-}
+
+module Data.Time.Zones.All (
+  toTZName,
+  fromTZName,
+  tzByLabel,
+  tzByName,
+  TZLabel(..),
+  -- * Access to raw data
+  TZDescription,
+  tzDescriptions,
+  ) where
+
+import Control.Arrow ((&&&))
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Time.Zones.Read
+import Data.Time.Zones.Types
+import qualified Data.Map.Lazy as M
+import qualified Data.Vector as V
+
+-- | Enumeration of time zone locations.
+data TZLabel
+  TZ_LABEL_DECL
+  deriving (Eq,Ord,Enum,Bounded,Show,Read)
+
+-- | Type of the elements of the compiled-in time zone info database.
+--
+-- @Right@ is a primary location;
+-- fields: name, label, abridged content of the Time Zone info file
+--
+-- @Left@ is a location which is an alias for a primary location;
+-- fields: name, label, label of the target
+--
+-- "Abridged" means that we only store the second part of the TZif
+-- file for version '2' and '3' files.
+type TZDescription = Either (String, TZLabel, TZLabel) (String, TZLabel, BL.ByteString)
+
+name :: TZDescription -> String
+name = either fst' fst'
+  where
+    fst' (a,_,_) = a
+
+label :: TZDescription -> TZLabel
+label = either snd' snd'
+  where
+    snd' (_,b,_) = b
+
+-- | Convert a `TZLabel` to the usual name of the location.
+--
+-- >> toTZName Europe__Paris
+-- >"Europe/Paris"
+toTZName :: TZLabel -> String
+toTZName = (v V.!) . fromEnum
+  where
+    v = V.fromList $ map name tzDescriptions
+
+-- | Lookup the `TZLabel` by the name of the location.
+--
+-- Returns `Nothing` if the location is unknown.
+--
+-- >> fromTZName "Europe/Paris"
+-- >Just Europe__Paris
+-- >> fromTZName "Foo/Bar"
+-- >Nothing
+fromTZName :: String -> Maybe TZLabel
+fromTZName = flip M.lookup m
+  where
+    m = M.fromList $ map (name &&& label) tzDescriptions
+
+-- | Lookup a `TZ` by its label.
+--
+-- >utcToNewYork :: UTCTime -> LocalTime
+-- >utcToNewYork = utcToLocalTimeTZ $ tzByLabel America__New_York
+tzByLabel :: TZLabel -> TZ
+tzByLabel = f
+  where
+    f = (v V.!) . fromEnum
+    v = V.fromList $ map g tzDescriptions
+    g (Right (_, _, desc)) = parseTZDescription desc
+    g (Left (_, _, target)) = f target
+
+-- | Lookup a `TZ` by the name of it's location.
+--
+-- Returns `Nothing` if the location is unknown.
+tzByName :: String -> Maybe TZ
+tzByName n = tzByLabel `fmap` fromTZName n
+
+-- | The list with raw data of the compiled-in time zone info database.
+--
+-- The list is guaranteed to be in the order of `TZLabel` constructors
+-- (it is sorted by name).
+tzDescriptions :: [TZDescription]
+tzDescriptions = zones
+  where
+    p name' label' desc = Right (name', label', BL.pack desc)
+    l name' label' target = Left (name', label', target)
+    zones = [
+      TZ_DESCRIPTIONS
+      ]

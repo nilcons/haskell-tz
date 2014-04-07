@@ -46,6 +46,7 @@ Library
     Data.Time.Zones,
     Data.Time.Zones.Types,
     Data.Time.Zones.Read,
+    Data.Time.Zones.All,
     Data.Time.Zones.TH
   Other-Modules: Paths_tz
   Default-Language: Haskell2010
@@ -54,6 +55,7 @@ Library
     base               >= 4        && < 5,
     binary             >= 0.5      && < 0.8,
     bytestring         >= 0.9      && < 0.11,
+    containers         >= 0.5      && < 0.6,
     deepseq            >= 1.1      && < 2,
     template-haskell   >= 2.6      && < 2.9,
     time               >= 1.2      && < 1.5,
@@ -91,6 +93,21 @@ Test-Suite th-test
     test-framework             >= 0.4     && < 1,
     test-framework-hunit       >= 0.2     && < 0.4,
     test-framework-th          >= 0.2     && < 0.4
+
+Test-Suite dummy-genZones
+  Default-Language: Haskell2010
+  Type: exitcode-stdio-1.0
+  HS-Source-Dirs: tools
+  Main-Is: genZones.hs
+  GHC-Options: -Wall
+  Build-Depends:
+    tz,
+    base                       >= 4       && < 5,
+    bytestring,
+    directory,
+    filemanip,
+    filepath,
+    MissingH
 
 Benchmark bench
   Default-Language: Haskell2010
