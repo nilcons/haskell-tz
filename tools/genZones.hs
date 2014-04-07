@@ -18,7 +18,7 @@ data TZFile
 
 data TZDesc
   = RegD { _name :: String, _label :: String, _desc :: BL.ByteString }
-  | LinkD { _name :: String, _label :: String, _target :: String }
+  | LinkD { _name :: String, _target :: String }
   deriving (Eq,Show)
 
 -- TODO(klao): remove when/if https://github.com/bos/filemanip/pull/4
@@ -47,7 +47,7 @@ collect dir0 = do
 
 toDesc :: TZFile -> IO TZDesc
 toDesc (Link name target)
-  = return $ LinkD name (nameToLabel name) (nameToLabel target)
+  = return $ LinkD name target
 toDesc (Reg name file) = do
   desc <- tzDescriptionFromFile file
   return $ RegD name (nameToLabel name) desc
@@ -56,13 +56,16 @@ nameToLabel :: String -> String
 nameToLabel = replace "-" "_" . replace "/" "__"
 
 labelDecl :: [TZDesc] -> String
-labelDecl zones
-  = "= " ++ join "\n  | " (map (nameToLabel . _name) zones)
+labelDecl zones = "= " ++ join "\n  | " (go zones)
+  where
+    go [] = []
+    go (RegD _ label _ : zs) = label : go zs
+    go (LinkD _ _ : zs) = go zs
 
 descriptionList :: [TZDesc] -> String
 descriptionList = join ",\n      " . map f
   where
-    f (LinkD name label target) = "l " ++ show name ++ " " ++ label ++ " " ++ target
+    f (LinkD name target) = "l " ++ show name ++ " " ++ show target
     f (RegD name label desc) = "p " ++ show name ++ " " ++ label ++ " " ++ show (BL.unpack desc)
 
 genCode :: FilePath -> FilePath -> [TZDesc] -> IO ()
