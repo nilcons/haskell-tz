@@ -1,5 +1,5 @@
 Name: tz
-Version: 0.0.0.2
+Version: 0.0.0.3
 License: Apache-2.0
 License-File: LICENSE
 Author: Mihaly Barasz, Gergely Risko
@@ -35,6 +35,7 @@ Data-Files: *.tab *.zone Chile/*.zone Etc/*.zone Canada/*.zone Indian/*.zone Afr
 
 Extra-Source-Files:
   README.md
+  Data/Time/Zones/All.hs.template
   examples/*.hs
 
 Source-Repository head
