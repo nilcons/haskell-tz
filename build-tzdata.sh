@@ -44,6 +44,10 @@ zdir=$base/tzdist/dest/etc/zoneinfo
 rm -f $zdir/* || true
 rm -rf $zdir/Etc
 
-# Compiling the tool
+echo Compiling the tool... >&2
 cd $base/tools
-# ghc -Wall -O --make -package-db ../dist/package.conf.inplace -XHaskell2010 genZones
+ghc -Wall -O --make -package-db ../dist/package.conf.inplace -XHaskell2010 genZones
+
+echo Creating All.hs... >&2
+cd $base
+./tools/genZones tzdist/dest/etc/zoneinfo/ Data/Time/Zones/All.hs.template Data/Time/Zones/All.hs
