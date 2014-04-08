@@ -1,5 +1,5 @@
 Name: tz
-Version: 0.0.0.4
+Version: 0.0.0.5
 License: Apache-2.0
 License-File: LICENSE
 Author: Mihaly Barasz, Gergely Risko
@@ -10,32 +10,22 @@ Category: Data
 Stability: experimental
 Homepage: https://github.com/nilcons/haskell-tz
 Bug-Reports: https://github.com/nilcons/haskell-tz/issues
-Synopsis: Time zones database and library
+Synopsis: Efficient time zone handling
 Description:
-  This package has two main goals:
+  The goal of this package is to provide a library that can read time
+  zone info files (aka. Olson files), and does time zone conversions
+  in a /pure/ and /efficient/ way.
   .
-  * To distribute the standard time zone database in a cabal package,
-    so that it can be used in Haskell programs uniformly on all
-    platforms.
-  .
-  * To provide a library that can read time zone info files
-    (aka. Olson files), and does time zone conversions in a /pure/ and
-    /efficient/ way.
-  .
-  The current version ships the @2014b@ version of the time zone
-  database. See: <http://www.iana.org/time-zones> for more info.
+  We also provide platform-independent and/or compiled-in access to
+  the standard Time Zone Dabase by the means of the companion @tzdata@
+  package <http://hackage.haskell.org/package/tzdata>.
   .
   The package is currently in a draft phase, I'm still experimenting
-  with different ideas wrt. scope\/API\/implementation\/etc. All comments
-  are welcome!
-
-Data-Dir: tzdata
--- We have to explicitly list all the directories because of Cabal's limitations.
-Data-Files: *.tab *.zone Chile/*.zone Etc/*.zone Canada/*.zone Indian/*.zone Africa/*.zone Asia/*.zone Antarctica/*.zone Europe/*.zone America/*.zone America/Kentucky/*.zone America/North_Dakota/*.zone America/Argentina/*.zone America/Indiana/*.zone Mexico/*.zone Brazil/*.zone Atlantic/*.zone Arctic/*.zone Australia/*.zone Pacific/*.zone US/*.zone
+  with different ideas wrt. scope\/API\/implementation\/etc. All
+  comments are welcome!
 
 Extra-Source-Files:
   README.md
-  Data/Time/Zones/All.hs.template
   examples/*.hs
 
 Source-Repository head
@@ -60,6 +50,7 @@ Library
     deepseq            >= 1.1      && < 2,
     template-haskell   >= 2.6      && < 2.9,
     time               >= 1.2      && < 1.5,
+    tzdata             >= 0.1      && < 0.2,
     vector             >= 0.9      && < 0.11
 
 Test-Suite tests
@@ -103,27 +94,12 @@ Test-Suite test-all
   GHC-Options: -Wall
   Build-Depends:
     tz,
+    tzdata,
     base                       >= 4       && < 5,
     HUnit                      >= 1.2     && < 1.3,
     test-framework             >= 0.4     && < 1,
     test-framework-hunit       >= 0.2     && < 0.4,
-    test-framework-th          >= 0.2     && < 0.4,
-    unix                       >= 2.6     && < 3
-
-Test-Suite dummy-genZones
-  Default-Language: Haskell2010
-  Type: exitcode-stdio-1.0
-  HS-Source-Dirs: tools
-  Main-Is: genZones.hs
-  GHC-Options: -Wall
-  Build-Depends:
-    tz,
-    base                       >= 4       && < 5,
-    bytestring,
-    directory,
-    filemanip,
-    filepath,
-    MissingH
+    test-framework-th          >= 0.2     && < 0.4
 
 Benchmark bench
   Default-Language: Haskell2010

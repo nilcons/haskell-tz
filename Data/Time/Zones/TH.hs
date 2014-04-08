@@ -39,18 +39,20 @@ module Data.Time.Zones.TH (
 
 import Control.DeepSeq
 import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Time.Zones.Files
 import Data.Time.Zones.Read
 import Data.Time.Zones.Types
 import Data.Version
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
+
 import Paths_tz
 
 -- | Generate a `TZ` definition from an entry out of the time zone
 -- database shipped with this package.
 includeTZFromDB :: String -> Q Exp
 includeTZFromDB tzName = do
-  desc <- runIO $ tzDescriptionFromDB tzName
+  desc <- runIO $ timeZonePathFromDB tzName >>= BL.readFile
   parseTZ desc
 
 -- | Generate a `TZ` definition from a system time zone information file.
@@ -59,13 +61,13 @@ includeTZFromDB tzName = do
 -- are located.
 includeSystemTZ :: String -> Q Exp
 includeSystemTZ tzName = do
-  desc <- runIO $ systemTZDescription tzName
+  desc <- runIO $ pathForSystemTZ tzName >>= BL.readFile
   parseTZ desc
 
 -- | Generate a `TZ` definition from the given time zone information file.
 includeTZFromFile :: FilePath -> Q Exp
 includeTZFromFile fname = do
-  desc <- runIO $ tzDescriptionFromFile fname
+  desc <- runIO $ BL.readFile fname
   parseTZ desc
 
 --------------------------------------------------------------------------------
@@ -102,7 +104,7 @@ parseTZ :: BL.ByteString -> Q Exp
 parseTZ desc = do
   -- Check that the description actually parses, so if there's a bug
   -- we fail at compile time and not at run time:
-  parseTZDescription desc `deepseq` return ()
+  parseOlson desc `deepseq` return ()
   parseTZInternalName <- getLocalName "parseTZInternal"
   appE (varE parseTZInternalName) $ stringE $ BL.unpack desc
 
@@ -138,4 +140,4 @@ getLocalName functionName = do
 -- place of splicing.
 parseTZInternal :: String -> TZ
 {-# INLINE parseTZInternal #-}
-parseTZInternal = parseTZDescription . BL.pack
+parseTZInternal = parseOlson . BL.pack

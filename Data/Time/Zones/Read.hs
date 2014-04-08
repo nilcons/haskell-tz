@@ -12,15 +12,12 @@ module Data.Time.Zones.Read (
   -- * Various ways of loading `TZ`
   loadTZFromFile,
   loadSystemTZ,
+  pathForSystemTZ,
   loadLocalTZ,
   loadTZFromDB,
-  -- * Reading only the description, no parsing
-  tzDescriptionFromFile,
-  tzDescriptionFromDB,
-  systemTZDescription,
   -- * Parsing Olson data
   olsonGet,
-  parseTZDescription,
+  parseOlson,
   ) where
 
 import Control.Applicative
@@ -34,11 +31,10 @@ import Data.Vector.Generic (stream, unstream)
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
 import Data.Int
+import Data.Time.Zones.Files
 import Data.Time.Zones.Types
 import System.Environment
 import System.IO.Error
-
-import Paths_tz hiding (version)
 
 -- | Reads and parses a time zone information file (in @tzfile(5)@
 -- aka. Olson file format) and returns the corresponding TZ data
@@ -50,9 +46,16 @@ loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
 -- @\/usr\/share\/zoneinfo@, or if the @TZDIR@ environment variable is
 -- set, then there.
 loadSystemTZ :: String -> IO TZ
-loadSystemTZ tzName = do
+loadSystemTZ tzName = pathForSystemTZ tzName >>= loadTZFromFile
+
+-- | Return the path for a time zone file in the system time zone directory.
+--
+-- The system directory is specified by the @TZDIR@ environment variable,
+-- or @\/usr\/share\/zoneinfo@ if it's not set.
+pathForSystemTZ :: String -> IO FilePath
+pathForSystemTZ tzName = do
   dir <- fromMaybe "/usr/share/zoneinfo" <$> getEnvMaybe "TZDIR"
-  loadTZFromFile $ dir ++ "/" ++ tzName
+  return $ dir ++ "/" ++ tzName
 
 -- | Returns the local `TZ` based on the @TZ@ and @TZDIR@
 -- environment variables.
@@ -85,49 +88,24 @@ getEnvMaybe var =
 -- with this package.
 loadTZFromDB :: String -> IO TZ
 loadTZFromDB tzName = do
-  -- TODO(klao): this probably won't work on Windows.
-  fn <- getDataFileName $ tzName ++ ".zone"
+  fn <- timeZonePathFromDB tzName
   loadTZFromFile fn
-
-tzDescriptionFromFile :: FilePath -> IO BL.ByteString
-tzDescriptionFromFile fname = olsonDescription <$> BL.readFile fname
-
-tzDescriptionFromDB :: String -> IO BL.ByteString
-tzDescriptionFromDB tzName = do
-  -- TODO(klao): this probably won't work on Windows.
-  fn <- getDataFileName $ tzName ++ ".zone"
-  tzDescriptionFromFile fn
-
-systemTZDescription :: String -> IO BL.ByteString
-systemTZDescription tzName = do
-  dir <- fromMaybe "/usr/share/zoneinfo" <$> getEnvMaybe "TZDIR"
-  tzDescriptionFromFile $ dir ++ "/" ++ tzName
 
 --------------------------------------------------------------------------------
 
 olsonGet :: Get TZ
-olsonGet = olsonGet' False
-
-olsonGet' :: Bool -> Get TZ
-olsonGet' abridged = do
+olsonGet = do
   version <- olsonHeader
   case () of
     () | version == '\0' -> olsonGetWith 4 getTime32
     () | version `elem` ['2', '3'] -> do
-      unless abridged $ skipOlson0 >> void olsonHeader
+      skipOlson0 >> void olsonHeader
       olsonGetWith 8 getTime64
       -- TODO(klao): read the rule string
     _ -> fail $ "olsonGet: invalid version character: " ++ show version
 
-olsonDescription :: BL.ByteString -> BL.ByteString
-olsonDescription input = flip runGet input $ do
-  version <- olsonHeader
-  if version `elem` ['2', '3']
-    then skipOlson0 >> getRemainingLazyByteString
-    else  return input
-
-parseTZDescription :: BL.ByteString -> TZ
-parseTZDescription = runGet (olsonGet' True)
+parseOlson :: BL.ByteString -> TZ
+parseOlson = runGet olsonGet
 
 olsonHeader :: Get Char
 olsonHeader = do
