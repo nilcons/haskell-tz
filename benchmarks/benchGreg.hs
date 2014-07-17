@@ -14,7 +14,7 @@ import Data.Time.Calendar.OrdinalDate
 data YD = YD {
   _ydYear :: {-# UNPACK #-} !Int,
   _ydDay  :: {-# UNPACK #-} !Int
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 makeLenses ''YD
 
@@ -58,6 +58,37 @@ toOrdinalDateDivMod !mjd = YD year yd
     year = quadcent * 400 + cent * 100 + quad * 4 + y + 1
 
 --------------------------------------------------------------------------------
+-- Brief description of the toOrdinal computation.
+--
+-- The length of the years in Gregorian calendar is periodic with
+-- period of 400 years. There are 100 - 4 + 1 = 97 leap years in a
+-- period, so the average length of a year is 365 + 97/400 =
+-- 146097/400 days.
+--
+-- Now, if you consider these -- let's call them nominal -- years,
+-- then for any point in time, for any linear day number we can
+-- determine which nominal year does it fall into by a single
+-- division. Moreover, if we align the start of the calendar year 1
+-- with the start of the nominal year 1, then the calendar years and
+-- nominal years never get too much out of sync. Specifically:
+--
+--  * start of the first day of a calendar year might fall into the
+--    preceding nominal year, but never more than by 1.5 days (591/400
+--    days, to be precise)
+--  * the start of the last day of a calendar year always falls into
+--    its nominal year (even for the leap years).
+--
+-- So, to find out the calendar year for a given day, we calculate
+-- which nominal year does its start fall. And, if we are not too
+-- close to the end of year, we have the right calendar
+-- year. Othewise, we just check whether it falls within the next
+-- calendar year.
+--
+-- Notes: to make the reasoning simpler and more efficient ('quot' is
+-- faster than 'div') we do the computation directly only for positive
+-- years (days after 1-1-1). For earlier dates we "transate" by an
+-- integral number of 400 year periods, do the computation and
+-- translate back.
 
 isLeapYearI :: Int -> Bool
 {-# INLINABLE isLeapYearI #-}
@@ -71,33 +102,32 @@ countLeapYears !ys = ys `shiftR` 2  -  cs  +  cs `shiftR` 2
   where
     cs = ys `quot` 100
 
-toOrdinalB0 :: Int -> YD
-{-# INLINE toOrdinalB0 #-}
-toOrdinalB0 b0 = res
-  where
-    (y, r) = (400 * b0) `quotRem` 146097
-    ls = countLeapYears y
-    res = if r < 146097 - 400
-          then YD y (b0 - 365*y - ls)
-          else let y' = if isLeapYearI (y+1) then y else y+1
-               in YD y' (b0 - 365*y' - ls)
-
-toOrdinalPr :: Int -> YD
-{-# INLINABLE toOrdinalPr #-}
-toOrdinalPr !mjd | b0 >= 0 = toOrdinalB0 b0
-                 | otherwise = toOrdinalB0 m & ydYear +~ d * 400
+toOrdinalImproved :: Int -> YD
+{-# INLINABLE toOrdinalImproved #-}
+toOrdinalImproved !mjd
+  | b0 <= 0 = toOrdinalB0 m & ydYear +~ d * 400
+  | otherwise = toOrdinalB0 b0
   where
     b0 = mjd + 678575
     (d,m) = b0 `divMod` 146097
 
-test :: Integer -> Int -> Int -> IO ()
-test y m md = do
-  let d = fromIntegral $ toModifiedJulianDay $ fromGregorian y m md
-  print $ d + 678575
-  print $ toOrdinalDate' d
-  let YD y' yd = toOrdinalPr d
-  print $ YD (y'+1) (yd+1)
+toOrdinalB0 :: Int -> YD
+{-# INLINE toOrdinalB0 #-}
+toOrdinalB0 dayB0 = res
+  where
+    (y0, r) = (400 * dayB0) `quotRem` 146097
+    dayInYear y = dayB0 - 365 * y - countLeapYears y + 1
+    d0 = dayInYear y0
+    d1 = dayInYear (y0 + 1)
+    res = if r >= 146097 - 591 && d1 > 0
+          then YD (y0 + 2) d1
+          else YD (y0 + 1) d0
 
+checkToOrdinalImproved :: [(Int, (YD, YD))]
+checkToOrdinalImproved = filter (uncurry (/=) . snd) l
+  where
+    l = [ (d, (toOrdinalDate' d', toOrdinalImproved d'))
+        | d <- [0 .. 400 * 366], let d' = d - 678575 ]
 
 benchmarks :: [Benchmark]
 benchmarks = [
@@ -111,7 +141,7 @@ benchmarks = [
   bgroup "optim" [
      bench "directCopy" $ whnf toOrdinalDateI d1i,
      bench "divModQuotRem" $ whnf toOrdinalDateDivMod d1i,
-     bench "divModPr" $ whnf toOrdinalPr d1i
+     bench "Improved" $ whnf toOrdinalImproved d1i
      ]
   ]
   where
