@@ -9,6 +9,13 @@ Stability   : experimental
 {-# LANGUAGE TemplateHaskell #-}
 
 module Data.Time.Zones.Internal (
+  -- * Time conversion to/from @Int64@
+  utcTimeToInt64,
+  utcTimeToInt64Pair,
+  localTimeToInt64Pair,
+  int64PairToUTCTime,
+  int64PairToLocalTime,
+  -- * Low-level \"coercions\"
   picoToInteger,
   integerToPico,
   diffTimeToPico,
@@ -18,9 +25,56 @@ module Data.Time.Zones.Internal (
   ) where
 
 import Data.Fixed
+import Data.Int
 import Data.Time
 import Data.Time.Zones.Internal.CoerceTH
 
+utcTimeToInt64Pair :: UTCTime -> (Int64, Int64)
+utcTimeToInt64Pair (UTCTime (ModifiedJulianDay d) t)
+  = (86400 * (fromIntegral d - unixEpochDay) + s, ps)
+  where
+    (s, ps) = fromIntegral (diffTimeToInteger t) `divMod` 1000000000000
+    unixEpochDay = 40587
+{-# INLINE utcTimeToInt64Pair #-}
+
+int64PairToLocalTime :: Int64 -> Int64 -> LocalTime
+int64PairToLocalTime t ps = LocalTime (ModifiedJulianDay day) (TimeOfDay h m s)
+  where
+    (day64, tid64) = t `divMod` 86400
+    day = fromIntegral $ day64 + 40587
+    (h, ms) = fromIntegral tid64 `quotRem` 3600
+    (m, s0) = ms `quotRem` 60
+    s = integerToPico $ fromIntegral $ ps + 1000000000000 * fromIntegral s0
+{-# INLINE int64PairToLocalTime #-}
+
+localTimeToInt64Pair :: LocalTime -> (Int64, Int64)
+localTimeToInt64Pair (LocalTime (ModifiedJulianDay day) (TimeOfDay h m s))
+  = (86400 * (fromIntegral day - unixEpochDay) + tid, ps)
+  where
+    (s64, ps) = fromIntegral (picoToInteger s) `divMod` 1000000000000
+    tid = s64 + fromIntegral (h * 3600 + m * 60)
+    unixEpochDay = 40587
+{-# INLINE localTimeToInt64Pair #-}
+
+int64PairToUTCTime :: Int64 -> Int64 -> UTCTime
+int64PairToUTCTime t ps = UTCTime (ModifiedJulianDay day) tid
+  where
+    (day64, tid64) = t `divMod` 86400
+    day = fromIntegral $ day64 + 40587
+    tid = integerToDiffTime $ fromIntegral $ ps + tid64 * 1000000000000
+{-# INLINE int64PairToUTCTime #-}
+
+utcTimeToInt64 :: UTCTime -> Int64
+utcTimeToInt64 (UTCTime (ModifiedJulianDay d) t)
+  = 86400 * (fromIntegral d - unixEpochDay)
+    + fromIntegral (diffTimeToInteger t) `div` 1000000000000
+  where
+    unixEpochDay = 40587
+{-# INLINE utcTimeToInt64 #-}
+
+--------------------------------------------------------------------------------
+-- Low-level zero-overhead conversions.
+-- Basically we could have used 'coerce' if the constructors were exported.
 
 -- TODO(klao): Is it better to inline them saturated or unsaturated?
 

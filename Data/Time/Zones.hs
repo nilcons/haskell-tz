@@ -31,13 +31,13 @@ module Data.Time.Zones (
   ) where
 
 import Data.Bits (shiftR)
-import Data.Fixed (divMod')
 import Data.Int (Int64)
 import Data.Time
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
 import Data.Time.Zones.Types
 import Data.Time.Zones.Read
+import Data.Time.Zones.Internal
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
@@ -62,8 +62,7 @@ timeZoneForPOSIX tz@(TZ trans _ _) t = timeZoneForIx tz i
 -- | Returns the `TimeZone` for the `TZ` at the given `UTCTime`.
 timeZoneForUTCTime :: TZ -> UTCTime -> TimeZone
 {-# INLINABLE timeZoneForUTCTime #-}
-timeZoneForUTCTime tz (UTCTime day tid)
-  = timeZoneForPOSIX tz $ dayTimeToInt64 day tid
+timeZoneForUTCTime tz ut = timeZoneForPOSIX tz $ utcTimeToInt64 ut
 
 -- | Returns the `LocalTime` corresponding to the given `UTCTime` in `TZ`.
 --
@@ -71,14 +70,10 @@ timeZoneForUTCTime tz (UTCTime day tid)
 -- (`timeZoneForPOSIX` tz ut) ut@ except when the time difference is not
 -- an integral number of minutes
 utcToLocalTimeTZ :: TZ -> UTCTime -> LocalTime
-utcToLocalTimeTZ tz (UTCTime day dtime) = LocalTime day' tod
+utcToLocalTimeTZ tz utcT = int64PairToLocalTime ut' ps
   where
-    diff = diffForPOSIX tz $ dayTimeToInt64 day dtime
-    (m', s) = (dtime + fromIntegral diff) `divMod'` 60
-    (h', m) = m' `divMod` 60
-    (d', h) = h' `divMod` 24
-    day' = fromIntegral d' `addDays` day
-    tod = TimeOfDay h m (realToFrac s)
+    (ut, ps) = utcTimeToInt64Pair utcT
+    ut' = ut + fromIntegral (diffForPOSIX tz ut)
 
 -- | The `TZ` definition for UTC.
 utcTZ :: TZ
@@ -198,23 +193,15 @@ data LocalToUTCResult
                  , _ltuSecondZone :: TimeZone
                  } deriving (Eq, Show)
 
--- TODO(klao): measure the improvement
-dayTimeToInt64 :: RealFrac a => Day -> a -> Int64
-{-# INLINE dayTimeToInt64 #-}
-dayTimeToInt64 (ModifiedJulianDay d) t = 86400 * (fromIntegral d - unixEpochDay) + floor t
-  where
-    unixEpochDay = 40587
-
 -- TODO(klao): better name
 localTimeToUTCFull :: TZ -> LocalTime -> LocalToUTCResult
-localTimeToUTCFull tz@(TZ _ diffs _) (LocalTime day tod) = res
+localTimeToUTCFull tz@(TZ _ diffs _) localT = res
   where
-    tid = timeOfDayToTime tod
-    t = dayTimeToInt64 day tid
-    addDiff i = UTCTime (addDays d day) tid'
+    (t,ps) = localTimeToInt64Pair localT
+    addDiff i = int64PairToUTCTime t' ps
       where
         diff = VU.unsafeIndex diffs i
-        (d, tid') = (tid - fromIntegral diff) `divMod'` 86400
+        t' = t - fromIntegral diff
     res = case localToPOSIX tz t of
       FLGap i _ -> LTUNone (addDiff i) (timeZoneForIx tz i)
       FLUnique i _ -> LTUUnique (addDiff i) (timeZoneForIx tz i)
