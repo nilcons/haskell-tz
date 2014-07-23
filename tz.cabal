@@ -145,3 +145,15 @@ Benchmark bench_greg
     lens,
     thyme,
     time
+
+Benchmark bench_conv
+  Default-Language: Haskell2010
+  Type: exitcode-stdio-1.0
+  HS-Source-Dirs: benchmarks
+  Main-Is: benchConv.hs
+  GHC-Options: -Wall -O2
+  Build-Depends:
+    tz,
+    base                       >= 4       && < 5,
+    criterion                  >= 0.8     && < 0.9,
+    time
