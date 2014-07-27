@@ -41,7 +41,6 @@ Library
     Data.Time.Zones.TH,
     Data.Time.Zones.Internal,
     Data.Time.Zones.Internal.CoerceTH
-  Other-Modules: Paths_tz
   Default-Language: Haskell2010
   GHC-Options: -Wall
   Build-Depends:
