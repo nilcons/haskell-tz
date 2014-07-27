@@ -72,7 +72,8 @@ Test-Suite tests
     test-framework-quickcheck2 >= 0.2     && < 0.4,
     test-framework-th          >= 0.2     && < 0.4,
     time                       >= 1.2     && < 1.5,
-    unix                       >= 2.6     && < 3
+    unix                       >= 2.6     && < 3,
+    vector                     >= 0.9     && < 0.11
 
 Test-Suite th-test
   Default-Language: Haskell2010
