@@ -6,7 +6,10 @@ Maintainer  : Mihaly Barasz <klao@nilcons.com>
 Stability   : experimental
 -}
 
+{-# LANGUAGE CPP #-}
+#ifdef TZ_TH
 {-# LANGUAGE TemplateHaskell #-}
+#endif
 
 module Data.Time.Zones.Internal (
   -- * Time conversion to/from @Int64@
@@ -27,7 +30,11 @@ module Data.Time.Zones.Internal (
 import Data.Fixed
 import Data.Int
 import Data.Time
+#ifdef TZ_TH
 import Data.Time.Zones.Internal.CoerceTH
+#else
+import Unsafe.Coerce
+#endif
 
 utcTimeToInt64Pair :: UTCTime -> (Int64, Int64)
 utcTimeToInt64Pair (UTCTime (ModifiedJulianDay d) t)
@@ -78,6 +85,8 @@ utcTimeToInt64 (UTCTime (ModifiedJulianDay d) t)
 
 -- TODO(klao): Is it better to inline them saturated or unsaturated?
 
+#ifdef TZ_TH
+
 picoToInteger :: Pico -> Integer
 picoToInteger p = $(destructNewType ''Fixed) p
 {-# INLINE picoToInteger #-}
@@ -101,3 +110,31 @@ diffTimeToInteger dt = picoToInteger (diffTimeToPico dt)
 integerToDiffTime :: Integer -> DiffTime
 integerToDiffTime i = picoToDiffTime (integerToPico i)
 {-# INLINE integerToDiffTime #-}
+
+#else
+
+picoToInteger :: Pico -> Integer
+picoToInteger = unsafeCoerce
+{-# INLINE picoToInteger #-}
+
+integerToPico :: Integer -> Pico
+integerToPico = unsafeCoerce
+{-# INLINE integerToPico #-}
+
+diffTimeToPico :: DiffTime -> Pico
+diffTimeToPico = unsafeCoerce
+{-# INLINE diffTimeToPico #-}
+
+picoToDiffTime :: Pico -> DiffTime
+picoToDiffTime = unsafeCoerce
+{-# INLINE picoToDiffTime #-}
+
+diffTimeToInteger :: DiffTime -> Integer
+diffTimeToInteger = unsafeCoerce
+{-# INLINE diffTimeToInteger #-}
+
+integerToDiffTime :: Integer -> DiffTime
+integerToDiffTime = unsafeCoerce
+{-# INLINE integerToDiffTime #-}
+
+#endif

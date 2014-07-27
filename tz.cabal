@@ -32,15 +32,19 @@ Source-Repository head
   Type: git
   Location: https://github.com/nilcons/haskell-tz.git
 
+Flag template-haskell
+  Description: Enable the use of and export Template Haskell
+               functionality. (Might need to disable this for
+               cross-compiling.)
+  Default: True
+
 Library
   Exposed-Modules:
     Data.Time.Zones,
     Data.Time.Zones.Types,
     Data.Time.Zones.Read,
     Data.Time.Zones.All,
-    Data.Time.Zones.TH,
-    Data.Time.Zones.Internal,
-    Data.Time.Zones.Internal.CoerceTH
+    Data.Time.Zones.Internal
   Default-Language: Haskell2010
   GHC-Options: -Wall
   Build-Depends:
@@ -49,10 +53,17 @@ Library
     bytestring         >= 0.9      && < 0.11,
     containers         >= 0.5      && < 0.6,
     deepseq            >= 1.1      && < 2,
-    template-haskell   >= 2.6      && < 2.10,
     time               >= 1.2      && < 1.5,
     tzdata             >= 0.1      && < 0.2,
     vector             >= 0.9      && < 0.11
+  if flag(template-haskell)
+    Exposed-Modules:
+      Data.Time.Zones.TH,
+      Data.Time.Zones.Internal.CoerceTH
+    Build-Depends:
+      template-haskell   >= 2.6      && < 2.10
+    CPP-Options: -DTZ_TH
+
 
 Test-Suite tests
   Default-Language: Haskell2010
@@ -80,6 +91,8 @@ Test-Suite th-test
   HS-Source-Dirs: tests
   Main-Is: testTH.hs
   GHC-Options: -Wall
+  if !flag(template-haskell)
+    Buildable: False
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
