@@ -127,8 +127,7 @@ prop_Melbourne_correct_LocalTime = checkLocalTime "Australia/Melbourne" Nothing
 
 case_DB_utc_is_utc = do
   tz <- loadTZFromDB "UTC"
-  V.forM_ (_tzDiffs tz) (@?= 0)
-  V.forM_ (_tzInfos tz) (@?= (False, "UTC"))
+  tz @?= utcTZ
 
 mkLocal y m d hh mm ss
   = LocalTime (fromGregorian y m d) (TimeOfDay hh mm ss)

@@ -21,6 +21,7 @@ module Data.Time.Zones.Read (
   ) where
 
 import Control.Applicative
+import Control.Exception (assert)
 import Control.Monad
 import Data.Binary
 import Data.Binary.Get
@@ -144,13 +145,23 @@ olsonGetWith szTime getTime = do
   let isDst (_,x,_) = x
       gmtOff (x,_,_) = x
       isDstName (_,d,ni) = (d, abbrForInd ni abbrs)
-      lInfos = VU.toList infos
-      first = head $ filter (not . isDst) lInfos ++ lInfos
-      vtrans = VU.cons minBound transitions
-      eInfos = VU.cons first $ VU.map (infos VU.!) indices
-      vdiffs = VU.map gmtOff eInfos
-      vinfos = VB.map isDstName $ unstream $ stream eInfos
-  return $ TZ vtrans vdiffs vinfos
+      vInfos = VU.map (infos VU.!) indices
+      -- Older tz databases didn't have an explicit first transition,
+      -- but since 2014c they do.  (In 2014c it's minBound and in
+      -- later versions it's the large negative constant below.)
+      (eTransitions, eInfos) = case () of
+        _ | hasInitTrans -> assert infosHeadIsDst (transitions', vInfos)
+        _ -> (VU.cons minBound transitions, VU.cons first vInfos)
+        where
+          hasInitTrans = not (VU.null transitions)
+                         && VU.head transitions <= -0x800000000000000
+          transitions' = transitions VU.// [(0, minBound)]
+          infosHeadIsDst = not $ isDst $ VU.head infos
+          lInfos = VU.toList infos
+          first = head $ filter (not . isDst) lInfos ++ lInfos
+      diffs = VU.map gmtOff eInfos
+      tzInfos = VB.map isDstName $ unstream $ stream eInfos
+  return $ TZ eTransitions diffs tzInfos
 
 abbrForInd :: Int -> BS.ByteString -> String
 abbrForInd i = BS.unpack . BS.takeWhile (/= '\0') . BS.drop i
