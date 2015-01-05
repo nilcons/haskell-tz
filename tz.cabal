@@ -126,7 +126,7 @@ Benchmark bench
     tz,
     base                       >= 4       && < 5,
     bindings-posix             >= 1.2     && < 2,
-    criterion                  >= 0.8     && < 0.9,
+    criterion                  >= 0.8     && < 1.1,
     time                       >= 1.2     && < 1.5,
     timezone-olson,
     timezone-series,
@@ -142,7 +142,7 @@ Benchmark bench_c
     tz,
     base                       >= 4       && < 5,
     bindings-posix             >= 1.2     && < 2,
-    criterion                  >= 0.8     && < 0.9,
+    criterion                  >= 0.8     && < 1.1,
     unix                       >= 2.6     && < 3
 
 Benchmark bench_greg
@@ -154,7 +154,7 @@ Benchmark bench_greg
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    criterion                  >= 0.8     && < 0.9,
+    criterion                  >= 0.8     && < 1.1,
     lens,
     thyme,
     time
@@ -168,5 +168,5 @@ Benchmark bench_conv
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    criterion                  >= 0.8     && < 0.9,
+    criterion                  >= 0.8     && < 1.1,
     time
