@@ -28,6 +28,8 @@ module Data.Time.Zones (
   loadTZFromDB,
   loadSystemTZ,
   loadLocalTZ,
+  -- Utilities
+  diffForAbbr
   ) where
 
 import Data.Bits (shiftR)
