@@ -45,6 +45,12 @@ diffForPOSIX :: TZ -> Int64 -> Int
 {-# INLINE diffForPOSIX #-}
 diffForPOSIX (TZ trans diffs _) t = VU.unsafeIndex diffs $ binarySearch trans t
 
+-- | Returns the most recent time difference (in seconds) associated
+-- with the given time zone abbreviation.
+diffForAbbr :: TZ -> String -> Maybe Int
+{-# INLINE diffForAbbr #-}
+diffForAbbr (TZ _ diffs infos) s = fmap (VU.unsafeIndex diffs) . VB.findIndex ((==) s . snd) $ VB.reverse infos
+
 timeZoneForIx :: TZ -> Int -> TimeZone
 {-# INLINE timeZoneForIx #-}
 timeZoneForIx (TZ _ diffs infos) i = TimeZone diffMins isDst name
