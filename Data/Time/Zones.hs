@@ -28,6 +28,8 @@ module Data.Time.Zones (
   loadTZFromDB,
   loadSystemTZ,
   loadLocalTZ,
+  -- * Utilities
+  diffForAbbr,
   ) where
 
 import Data.Bits (shiftR)
@@ -155,7 +157,7 @@ localToPOSIX (TZ trans diffs _) !lTime = res
     res = if ix == VU.length trans
           then FLUnique ix cand1 -- TODO(klao): extend when rule handling is added
           else res'
-               
+
     ix' = ix + 1
     nextTrans = VU.unsafeIndex trans ix'
     cand2 = lTime - fromIntegral (VU.unsafeIndex diffs ix')
@@ -214,3 +216,28 @@ localTimeToUTCTZ tz lt =
     LTUNone ut _ -> ut
     LTUUnique ut _ -> ut
     LTUAmbiguous _ ut _ _ -> ut
+
+--------------------------------------------------------------------------------
+-- Random utility functions
+
+-- | Returns the most recent time difference (in seconds) associated
+-- with the given time zone abbreviation.
+
+-- | Returns /a/ time difference (in seconds) corresponding to the
+-- abbreviation in the given time zone.
+--
+-- If there are multiple time differences associated with the same
+-- abbreviation, the one corresponding to the latest use is
+-- returned. (The latest use might be in the past or the future
+-- depending on whether the abbreviation is still used.)
+--
+-- This function is here for informational purpose only, do not use it
+-- for time conversion. (Instead, use 'localTimeToUTCFull', and if the
+-- result is ambiguous disambiguate between the possible results based
+-- on the abbreviation used.)
+diffForAbbr :: TZ -> String -> Maybe Int
+{-# INLINABLE diffForAbbr #-}
+diffForAbbr (TZ _ diffs infos) s =
+  case VB.findIndex ((==) s . snd) $ VB.reverse infos of
+    Nothing -> Nothing
+    Just i -> Just $ VU.unsafeIndex diffs (VU.length diffs - 1 - i)

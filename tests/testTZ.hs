@@ -161,6 +161,19 @@ case_Budapest_LocalToUTC = do
     LTUAmbiguous (mkUTC 2013 10 27  00 15 15) (mkUTC 2013 10 27  01 15 15)
       zSummer zWinter
 
+case_UTC_diffForAbbr = do
+  tz <- loadTZFromDB "UTC"
+  diffForAbbr tz "UTC" @?= Just 0
+  diffForAbbr tz "XYZ" @?= Nothing
+
+case_Paris_diffForAbbr = do
+  tz <- loadTZFromDB "Europe/Paris"
+  diffForAbbr tz "CET" @?= Just 3600
+  diffForAbbr tz "CEST" @?= Just 7200
+  diffForAbbr tz "WET" @?= Just 0
+  diffForAbbr tz "LMT" @?= Just 561
+  diffForAbbr tz "XYZ" @?= Nothing
+
 main :: IO ()
 main = do
   -- When we are running 'cabal test' the package is not yet
