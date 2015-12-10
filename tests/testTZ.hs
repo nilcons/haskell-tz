@@ -164,10 +164,10 @@ case_Budapest_LocalToUTC = do
 -- Local->UTC, test for time zones that stop having DST.
 -- Bug reported in #8
 case_Brisbane_LocalToUTC = do
-  tz <- loadTZFromDB "Australia/Brisbane"
-  let zBrisbane = TimeZone 600 False "EST"
+  tz <- loadTZFromDB "Asia/Singapore"
+  let zSingapore = TimeZone 480 False "SGT"
   localTimeToUTCFull tz (mkLocal 2015 11 23  00 00 00) @?=
-    LTUUnique (mkUTC 2015 11 22  14 00 00) zBrisbane
+    LTUUnique (mkUTC 2015 11 22  16 00 00) zSingapore
 
 case_UTC_diffForAbbr = do
   tz <- loadTZFromDB "UTC"
