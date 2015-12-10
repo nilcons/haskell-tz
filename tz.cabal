@@ -1,5 +1,5 @@
 Name: tz
-Version: 0.0.0.10
+Version: 0.1.0.0
 License: Apache-2.0
 License-File: LICENSE
 Author: Mihaly Barasz, Gergely Risko
@@ -20,7 +20,7 @@ Description:
   the standard Time Zone Dabase by the means of the companion @tzdata@
   package <http://hackage.haskell.org/package/tzdata>.
   .
-  The package is currently in a draft phase, I'm still experimenting
+  The package is currently in an alpha phase, I'm still experimenting
   with different ideas wrt. scope\/API\/implementation\/etc. All
   comments are welcome!
 
