@@ -161,6 +161,14 @@ case_Budapest_LocalToUTC = do
     LTUAmbiguous (mkUTC 2013 10 27  00 15 15) (mkUTC 2013 10 27  01 15 15)
       zSummer zWinter
 
+-- Local->UTC, test for time zones that stop having DST.
+-- Bug reported in #8
+case_Brisbane_LocalToUTC = do
+  tz <- loadTZFromDB "Australia/Brisbane"
+  let zBrisbane = TimeZone 600 False "EST"
+  localTimeToUTCFull tz (mkLocal 2015 11 23  00 00 00) @?=
+    LTUUnique (mkUTC 2015 11 22  14 00 00) zBrisbane
+
 case_UTC_diffForAbbr = do
   tz <- loadTZFromDB "UTC"
   diffForAbbr tz "UTC" @?= Just 0
