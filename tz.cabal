@@ -55,13 +55,13 @@ Library
     deepseq            >= 1.1      && < 2,
     time               >= 1.2      && < 1.6,
     tzdata             >= 0.1      && < 0.2,
-    vector             >= 0.9      && < 0.11
+    vector             >= 0.9      && < 0.12
   if flag(template-haskell)
     Exposed-Modules:
       Data.Time.Zones.TH,
       Data.Time.Zones.Internal.CoerceTH
     Build-Depends:
-      template-haskell   >= 2.6      && < 2.10
+      template-haskell   >= 2.6      && < 2.11
     CPP-Options: -DTZ_TH
 
 
@@ -83,7 +83,7 @@ Test-Suite tests
     test-framework-th          >= 0.2     && < 0.4,
     time                       >= 1.2     && < 1.6,
     unix                       >= 2.6     && < 3,
-    vector                     >= 0.9     && < 0.11
+    vector                     >= 0.9     && < 0.12
 
 Test-Suite th-test
   Default-Language: Haskell2010
