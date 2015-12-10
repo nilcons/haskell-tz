@@ -27,6 +27,7 @@ Description:
 Extra-Source-Files:
   README.md
   examples/*.hs
+  stack.yaml
 
 Source-Repository head
   Type: git
