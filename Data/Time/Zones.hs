@@ -154,7 +154,7 @@ localToPOSIX (TZ trans diffs _) !lTime = res
     lBound = lTime - 86400
     ix = binarySearch trans lBound
     cand1 = lTime - fromIntegral (VU.unsafeIndex diffs ix)
-    res = if ix == VU.length trans
+    res = if ix == VU.length trans - 1
           then FLUnique ix cand1 -- TODO(klao): extend when rule handling is added
           else res'
 
