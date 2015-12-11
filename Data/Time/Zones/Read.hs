@@ -28,7 +28,6 @@ import Data.Binary.Get
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
-import Data.Vector.Generic (stream, unstream)
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
 import Data.Int
@@ -160,7 +159,7 @@ olsonGetWith szTime getTime = do
           lInfos = VU.toList infos
           first = head $ filter (not . isDst) lInfos ++ lInfos
       diffs = VU.map gmtOff eInfos
-      tzInfos = VB.map isDstName $ unstream $ stream eInfos
+      tzInfos = VB.fromListN (VU.length eInfos) $ map isDstName $ VU.toList eInfos
   return $ TZ eTransitions diffs tzInfos
 
 abbrForInd :: Int -> BS.ByteString -> String
