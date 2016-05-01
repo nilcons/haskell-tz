@@ -24,7 +24,7 @@ import Control.Applicative
 import Control.Exception (assert)
 import Control.Monad
 import Data.Binary
-import Data.Binary.Get
+import Data.Binary.Get (getByteString, getWord32be, getWord64be, runGet, skip)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
 import Data.Maybe
