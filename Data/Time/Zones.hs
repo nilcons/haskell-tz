@@ -7,10 +7,11 @@ Stability   : experimental
 -}
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 module Data.Time.Zones (
   TZ,
-  utcTZ,
+  Data.Time.Zones.Types.utcTZ,
   -- * Universal -> Local direction
   diffForPOSIX,
   timeZoneForPOSIX,
@@ -32,14 +33,16 @@ module Data.Time.Zones (
   diffForAbbr,
   ) where
 
-import Data.Bits (shiftR)
-import Data.Int (Int64)
-import Data.Time
+import           Control.DeepSeq
+import           Data.Bits (shiftR)
+import           Data.Data
+import           Data.Int (Int64)
+import           Data.Time
+import           Data.Time.Zones.Internal
+import           Data.Time.Zones.Read
+import           Data.Time.Zones.Types
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
-import Data.Time.Zones.Types
-import Data.Time.Zones.Read
-import Data.Time.Zones.Internal
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
@@ -76,10 +79,6 @@ utcToLocalTimeTZ tz utcT = int64PairToLocalTime ut' ps
   where
     (ut, ps) = utcTimeToInt64Pair utcT
     ut' = ut + fromIntegral (diffForPOSIX tz ut)
-
--- | The `TZ` definition for UTC.
-utcTZ :: TZ
-utcTZ = TZ (VU.singleton minBound) (VU.singleton 0) (VB.singleton (False, "UTC"))
 
 -- | Returns the largest index `i` such that `v ! i <= t`.
 --
@@ -134,7 +133,10 @@ data FromLocal
   | FLDouble { _flIx :: {-# UNPACK #-} !Int
              , _flRes1 :: {-# UNPACK #-} !Int64
              , _flRes2 :: {-# UNPACK #-} !Int64 }
-  deriving (Show)
+  deriving (Eq, Show, Read, Typeable, Data)
+
+instance NFData FromLocal where
+  rnf !_ = ()
 
 -- We make the following two assumptions here:
 --
@@ -193,7 +195,10 @@ data LocalToUTCResult
                  , _ltuSecond     :: UTCTime
                  , _ltuFirstZone  :: TimeZone
                  , _ltuSecondZone :: TimeZone
-                 } deriving (Eq, Show)
+                 } deriving (Eq, Show, Read, Typeable, Data)
+
+instance NFData LocalToUTCResult where
+  rnf !_ = ()
 
 -- TODO(klao): better name
 localTimeToUTCFull :: TZ -> LocalTime -> LocalToUTCResult
