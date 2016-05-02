@@ -36,6 +36,9 @@ import Data.Time.Zones.Types
 import System.Environment
 import System.IO.Error
 
+-- Suppress 'redundant imports' warning
+import Prelude
+
 -- | Reads and parses a time zone information file (in @tzfile(5)@
 -- aka. Olson file format) and returns the corresponding TZ data
 -- structure.
