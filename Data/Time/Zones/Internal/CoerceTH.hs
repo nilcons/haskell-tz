@@ -6,6 +6,7 @@ Maintainer  : Mihaly Barasz <klao@nilcons.com>
 Stability   : experimental
 -}
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Data.Time.Zones.Internal.CoerceTH (
@@ -20,7 +21,11 @@ getNewTypeCon :: Name -> Q Name
 getNewTypeCon newTy = do
   info <- reify newTy
   case info of
+#if MIN_VERSION_template_haskell(2,11,0)
+    TyConI (NewtypeD _ _ _ _ (NormalC name _) _) -> return name
+#else
     TyConI (NewtypeD _ _ _ (NormalC name _) _) -> return name
+#endif
     _ -> fail "Not a newtype"
 
 constructNewType :: Name -> Q Exp
