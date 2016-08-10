@@ -3,7 +3,6 @@
 
 module Main (main) where
 
-import Bindings.Posix.Time
 import Data.Bits
 import Data.Int
 import Data.IORef
@@ -21,10 +20,12 @@ import Test.QuickCheck.Monadic
 import System.Posix.Env
 import System.IO.Unsafe
 
+foreign import ccall safe "time.h tzset" c_tzset :: IO ()
+
 setupTZ :: String -> IO TZ
 setupTZ zoneName = do
   setEnv "TZ" zoneName True
-  c'tzset
+  c_tzset
   loadSystemTZ zoneName
 
 onceIO :: IO a -> IO a

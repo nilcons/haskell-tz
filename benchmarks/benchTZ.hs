@@ -1,6 +1,5 @@
 module Main (main) where
 
-import Bindings.Posix.Time
 import Criterion.Main
 import Data.Fixed
 import Data.Int
@@ -10,10 +9,12 @@ import Data.Time.LocalTime.TimeZone.Series
 import Data.Time.Zones
 import System.Posix.Env
 
+foreign import ccall safe "time.h tzset" c_tzset :: IO ()
+
 setupTZ :: String -> IO TZ
 setupTZ zoneName = do
   setEnv "TZ" zoneName True
-  c'tzset
+  c_tzset
   loadSystemTZ zoneName
 
 mkLocal :: Integer -> Int -> Int -> Int -> Int -> Pico -> LocalTime

@@ -76,7 +76,6 @@ Test-Suite tests
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
     HUnit                      >= 1.2     && < 1.4,
     QuickCheck                 >= 2.4     && < 3,
     test-framework             >= 0.4     && < 1,
@@ -127,24 +126,10 @@ Benchmark bench
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
     criterion                  >= 0.8     && < 1.2,
     time                       >= 1.2     && < 1.7,
     timezone-olson,
     timezone-series,
-    unix                       >= 2.6     && < 3
-
-Benchmark bench_c
-  Default-Language: Haskell2010
-  Type: exitcode-stdio-1.0
-  HS-Source-Dirs: benchmarks
-  Main-Is: bench_c_localtime.hs
-  GHC-Options: -Wall -O2
-  Build-Depends:
-    tz,
-    base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
-    criterion                  >= 0.8     && < 1.2,
     unix                       >= 2.6     && < 3
 
 Benchmark bench_greg
