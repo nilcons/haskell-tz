@@ -9,8 +9,6 @@ import Data.IORef
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Time.Zones
-import Data.Time.Zones.Types
-import qualified Data.Vector.Generic as V
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2
 import Test.Framework.TH
@@ -52,17 +50,6 @@ onceIO op = opWrap
 --
 -- * And below around -2^55 the localtime_r C function starts failing
 -- with "value too large".
-checkTimeZone :: String -> Int32 -> Property
-checkTimeZone zoneName = prop
-  where
-    setup = onceIO $ setupTZ zoneName
-    prop ut = monadicIO $ do
-      tz <- run $ setup
-      run $ print ut
-      timeZone <- run $ getTimeZone $ posixSecondsToUTCTime $ fromIntegral ut
-      run $ timeZoneForPOSIX tz (fromIntegral ut) @?= timeZone
-
--- See comment for the checkTimeZone.
 checkTimeZone64 :: String -> Property
 checkTimeZone64 zoneName = prop
   where
