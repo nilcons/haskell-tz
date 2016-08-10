@@ -6,6 +6,16 @@ resolver: nightly-2016-08-06
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+# timezone-series with time-1.6 support
+- location:
+    git: https://github.com/ryantrinkle/timezone-series.git
+    commit: f8dece8c016db6476e2bb0d4f972769a76f6ff40
+  extra-dep: true
+# timezone-olson with time-1.6 support
+- location:
+    git: https://github.com/klao/timezone-olson.git
+    commit: 04085c5adfa3a87155d560f7cbbf189a28e513e3
+  extra-dep: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
