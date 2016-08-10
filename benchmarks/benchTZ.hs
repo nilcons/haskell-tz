@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Bindings.Posix.Time
+import TzPosixCompat
 import Criterion.Main
 import Data.Fixed
 import Data.Int

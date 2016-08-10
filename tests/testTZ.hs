@@ -3,7 +3,7 @@
 
 module Main (main) where
 
-import Bindings.Posix.Time
+import TzPosixCompat 
 import Data.Bits
 import Data.Int
 import Data.IORef
