@@ -33,14 +33,14 @@ onceIO :: IO a -> IO a
 onceIO op = opWrap
   where
     {-# NOINLINE var #-}
-    var = unsafePerformIO $ newIORef Nothing
+    var = unsafePerformIO $ newIORef $ Left op
     opWrap = do
       v <- readIORef var
       case v of
-        Just x -> return x
-        Nothing -> do
+        Right x -> return x
+        Left _ -> do
           x <- op
-          atomicWriteIORef var $ Just x
+          atomicWriteIORef var $ Right x
           return x
 
 -- On the Int32 range of POSIX times we should replicate the behavior
