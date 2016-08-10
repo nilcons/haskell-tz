@@ -2,8 +2,10 @@
 
 module Main (main) where
 
-import Bindings.Posix.Time
-import Bindings.Posix.Sys.Types
+-- Not exactly a bindings-posix, but the very same code
+-- Helps with portability, i.e. we can build/run tests & benchmarks
+-- on Windows and OSX
+import TzPosixCompat
 import Criterion.Main
 import Foreign.Safe
 import Foreign.C

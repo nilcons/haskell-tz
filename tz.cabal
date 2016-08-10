@@ -70,13 +70,14 @@ Library
 Test-Suite tests
   Default-Language: Haskell2010
   Type: exitcode-stdio-1.0
-  HS-Source-Dirs: tests
+  HS-Source-Dirs: tests, posix
   Main-Is: testTZ.hs
+  Other-Modules: TzPosixCompat
   GHC-Options: -Wall
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
+    bindings-DSL               >= 1.0.23  && < 1.1,
     HUnit                      >= 1.2     && < 1.4,
     QuickCheck                 >= 2.4     && < 3,
     test-framework             >= 0.4     && < 1,
@@ -121,13 +122,14 @@ Test-Suite test-all
 Benchmark bench
   Default-Language: Haskell2010
   Type: exitcode-stdio-1.0
-  HS-Source-Dirs: benchmarks
+  HS-Source-Dirs: benchmarks, posix
   Main-Is: benchTZ.hs
+  Other-Modules: TzPosixCompat
   GHC-Options: -Wall -O2
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
+    bindings-DSL               >= 1.0.23  && < 1.1,
     criterion                  >= 0.8     && < 1.2,
     time                       >= 1.2     && < 1.7,
     timezone-olson,
@@ -137,13 +139,14 @@ Benchmark bench
 Benchmark bench_c
   Default-Language: Haskell2010
   Type: exitcode-stdio-1.0
-  HS-Source-Dirs: benchmarks
+  HS-Source-Dirs: benchmarks, posix
   Main-Is: bench_c_localtime.hs
+  Other-Modules: TzPosixCompat
   GHC-Options: -Wall -O2
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    bindings-posix             >= 1.2     && < 2,
+    bindings-DSL               >= 1.0.23  && < 1.1,
     criterion                  >= 0.8     && < 1.2,
     unix                       >= 2.6     && < 3
 

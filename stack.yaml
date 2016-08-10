@@ -6,28 +6,22 @@ resolver: nightly-2016-08-06
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+# timezone-series with time-1.6 support
+- location:
+    git: git@github.com:ryantrinkle/timezone-series.git
+    commit: f8dece8c016db6476e2bb0d4f972769a76f6ff40
+  extra-dep: true
+
+# For timezone-olson
+allow-newer: true
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-- bindings-posix-1.2.6
+- thyme-0.3.5.5
+- timezone-olson-0.1.7
 
 # Override default flag values for local packages and extra-deps
 flags: {}
 
 # Extra package databases containing global packages
 extra-package-dbs: []
-
-# Control whether we use the GHC we find on the path
-# system-ghc: true
-
-# Require a specific version of stack, using version ranges
-# require-stack-version: -any # Default
-# require-stack-version: >= 0.1.4.0
-
-# Override the architecture used by stack, especially useful on Windows
-# arch: i386
-# arch: x86_64
-
-# Extra directories used by stack for building
-# extra-include-dirs: [/path/to/dir]
-# extra-lib-dirs: [/path/to/dir]
