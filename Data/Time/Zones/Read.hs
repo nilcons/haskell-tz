@@ -48,6 +48,9 @@ loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
 -- | Looks for the time zone file in the system timezone directory, which is
 -- @\/usr\/share\/zoneinfo@, or if the @TZDIR@ environment variable is
 -- set, then there.
+--
+-- Note, this is unlikely to work on non-posix systems (e.g.,
+-- Windows), use @loadTZFromDB@ or @loadTZFromFile@ instead.
 loadSystemTZ :: String -> IO TZ
 loadSystemTZ tzName = pathForSystemTZ tzName >>= loadTZFromFile
 
