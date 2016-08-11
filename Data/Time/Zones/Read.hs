@@ -50,7 +50,7 @@ loadTZFromFile fname = runGet olsonGet <$> BL.readFile fname
 -- set, then there.
 --
 -- Note, this is unlikely to work on non-posix systems (e.g.,
--- Windows), use @loadTZFromDB@ or @loadTZFromFile@ instead.
+-- Windows), use `loadTZFromDB` or `loadTZFromFile` instead.
 loadSystemTZ :: String -> IO TZ
 loadSystemTZ tzName = pathForSystemTZ tzName >>= loadTZFromFile
 

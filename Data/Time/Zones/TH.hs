@@ -54,7 +54,7 @@ includeTZFromDB tzName = do
 -- are located.
 --
 -- Note, this is unlikely to work on non-posix systems (e.g.,
--- Windows), use @includeTZFromDB@ or @includeTZFromFile@ instead.
+-- Windows), use `includeTZFromDB` or `includeTZFromFile` instead.
 includeSystemTZ :: String -> Q Exp
 includeSystemTZ tzName = do
   desc <- runIO $ pathForSystemTZ tzName >>= BL.readFile
