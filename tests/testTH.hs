@@ -7,11 +7,11 @@ import Test.Framework.TH
 import Test.HUnit hiding (Test, assert)
 
 tzBudapest :: TZ
-tzBudapest = $(includeSystemTZ "Europe/Budapest")
+tzBudapest = $(includeTZFromDB "Europe/Budapest")
 
 case_Budapest_is_Budapest :: IO ()
 case_Budapest_is_Budapest = do
-  readBp <- loadSystemTZ "Europe/Budapest"
+  readBp <- loadTZFromDB "Europe/Budapest"
   tzBudapest @?= readBp
 
 main :: IO ()
