@@ -7,13 +7,13 @@ import Data.Time
 import Data.Time.LocalTime.TimeZone.Olson
 import Data.Time.LocalTime.TimeZone.Series
 import Data.Time.Zones
-import System.Posix.Env
+import System.Environment
 
 foreign import ccall safe "time.h tzset" c_tzset :: IO ()
 
 setupTZ :: String -> IO TZ
 setupTZ zoneName = do
-  setEnv "TZ" zoneName True
+  setEnv "TZ" zoneName
   c_tzset
   loadSystemTZ zoneName
 

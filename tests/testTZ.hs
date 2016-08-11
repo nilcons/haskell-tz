@@ -4,25 +4,25 @@
 module Main (main) where
 
 import Data.Bits
-import Data.Int
 import Data.IORef
+import Data.Int
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Time.Zones
+import System.Environment
+import System.IO.Unsafe
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2
 import Test.Framework.TH
 import Test.HUnit hiding (Test, assert)
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
-import System.Posix.Env
-import System.IO.Unsafe
 
 foreign import ccall safe "time.h tzset" c_tzset :: IO ()
 
 setupTZ :: String -> IO TZ
 setupTZ zoneName = do
-  setEnv "TZ" zoneName True
+  setEnv "TZ" zoneName
   c_tzset
   loadSystemTZ zoneName
 
@@ -175,5 +175,5 @@ main = do
   -- When we are running 'cabal test' the package is not yet
   -- installed, so we want to use the data directory from within the
   -- sources.
-  setEnv "tz_datadir" "./tzdata" True
+  setEnv "tz_datadir" "./tzdata"
   $defaultMainGenerator

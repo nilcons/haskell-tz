@@ -83,7 +83,6 @@ Test-Suite tests
     test-framework-quickcheck2 >= 0.2     && < 0.4,
     test-framework-th          >= 0.2     && < 0.4,
     time                       >= 1.2     && < 1.7,
-    unix                       >= 2.6     && < 3,
     vector                     >= 0.9     && < 0.12
 
 Test-Suite th-test
@@ -129,8 +128,7 @@ Benchmark bench
     criterion                  >= 0.8     && < 1.2,
     time                       >= 1.2     && < 1.7,
     timezone-olson,
-    timezone-series,
-    unix                       >= 2.6     && < 3
+    timezone-series
 
 Benchmark bench_greg
   Default-Language: Haskell2010
