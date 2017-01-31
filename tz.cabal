@@ -57,7 +57,7 @@ Library
     deepseq            >= 1.1      && < 2,
     time               >= 1.2      && < 1.7,
     tzdata             >= 0.1      && < 0.2,
-    vector             >= 0.9      && < 0.12
+    vector             >= 0.9      && < 0.13
   if flag(template-haskell)
     Exposed-Modules:
       Data.Time.Zones.TH,
