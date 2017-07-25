@@ -88,7 +88,7 @@ Test-Suite testsSys
   HS-Source-Dirs: tests
   Main-Is: testTZSys.hs
   GHC-Options: -Wall
-  If os(mingw32) || os(mingw64)
+  If os(windows)
     Buildable: False
   Build-Depends:
     tz,
