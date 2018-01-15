@@ -3,7 +3,10 @@
 
 module Main (main) where
 
+import Data.Int (Int64)
 import Data.Time
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import Data.Time.LocalTime.TimeZone.Series (TimeZoneSeries(..))
 import Data.Time.Zones
 import Test.Framework.Providers.HUnit
 import Test.Framework.TH
@@ -69,6 +72,54 @@ case_Paris_diffForAbbr = do
   diffForAbbr tz "WET" @?= Just 0
   diffForAbbr tz "LMT" @?= Just 561
   diffForAbbr tz "XYZ" @?= Nothing
+
+posixSecondsToUTCTime' :: Int64 -> UTCTime
+posixSecondsToUTCTime' = posixSecondsToUTCTime . fromIntegral
+
+case_UTC_toTimeZoneSeries = do
+  tz <- loadTZFromDB "UTC"
+  -- has only nomial series
+  toTimeZoneSeries tz @?= Just
+    TimeZoneSeries {
+      tzsTimeZone = utc
+    , tzsTransitions = [(posixSecondsToUTCTime' minBound, utc)]
+    }
+
+case_Pacific_toBoundedTimeZoneSeries = do
+  tz <- loadTZFromDB "America/Los_Angeles"
+  let yStart = localTimeToUTCTZ tz (mkLocal 2017 01 01  00 00 00)
+      dStart = localTimeToUTCTZ tz (mkLocal 2017 03 12  03 00 00)
+      dAny   = localTimeToUTCTZ tz (mkLocal 2017 08 15  00 00 00)
+      dEnd   = localTimeToUTCTZ tz (mkLocal 2017 11 05  00 59 59)
+      sAny   = localTimeToUTCTZ tz (mkLocal 2017 12 15  00 00 00)
+      yEnd   = localTimeToUTCTZ tz (mkLocal 2017 12 31  23 59 59)
+      pst = TimeZone (-480) False "PST"
+      pdt = TimeZone (-420) True "PDT"
+
+  -- daylight period has no transitions
+  toBoundedTimeZoneSeries tz dStart dEnd @?= Nothing
+  toBoundedTimeZoneSeries tz dEnd dStart @?= Nothing
+
+  -- daylight to standard has one transition
+  let seriesDToS = Just
+        TimeZoneSeries {
+          tzsTimeZone = pst
+        , tzsTransitions = [(posixSecondsToUTCTime' 1509872400, pst)]
+        }
+  toBoundedTimeZoneSeries tz dAny sAny @?= seriesDToS
+  toBoundedTimeZoneSeries tz sAny dStart @?= seriesDToS
+
+  -- a pacific year has two transitions
+  let seriesYear = Just
+        TimeZoneSeries {
+          tzsTimeZone = pst
+        , tzsTransitions = [
+              (posixSecondsToUTCTime' 1509872400, pst)
+            , (posixSecondsToUTCTime' 1489312800, pdt)
+            ]
+        }
+  toBoundedTimeZoneSeries tz yStart yEnd @?= seriesYear
+  toBoundedTimeZoneSeries tz yEnd yStart @?= seriesYear
 
 main :: IO ()
 main = $defaultMainGenerator
