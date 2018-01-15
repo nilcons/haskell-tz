@@ -29,6 +29,9 @@ module Data.Time.Zones (
   loadTZFromDB,
   loadSystemTZ,
   loadLocalTZ,
+  -- * Acquiring `TimeZoneSeries` information
+  toTimeZoneSeries,
+  toBoundedTimeZoneSeries,
   -- * Utilities
   diffForAbbr,
   ) where
@@ -37,12 +40,56 @@ import           Control.DeepSeq
 import           Data.Bits (shiftR)
 import           Data.Data
 import           Data.Int (Int64)
+import           Data.List (find)
+import           Data.Maybe (fromMaybe)
 import           Data.Time
+import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
+import           Data.Time.LocalTime (TimeZone(..))
+import           Data.Time.LocalTime.TimeZone.Series (TimeZoneSeries(..))
 import           Data.Time.Zones.Internal
 import           Data.Time.Zones.Read
 import           Data.Time.Zones.Types
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
+
+type Transition = (UTCTime, TimeZone)
+
+-- | Create a `Transition` given a `TZ` and index
+mkTransition :: TZ -> Int -> Transition
+{-# INLINE mkTransition #-}
+mkTransition tz@(TZ trans _ _) i =
+  ( posixSecondsToUTCTime $ fromIntegral (VU.unsafeIndex trans i)
+  , timeZoneForIx tz i
+  )
+
+-- | Create a `TimeZoneSeries` from ordered ascending list of `Transition`s
+mkTimeZoneSeries :: [Transition] -> Maybe TimeZoneSeries
+{-# INLINE mkTimeZoneSeries #-}
+mkTimeZoneSeries ts@(d:_) = Just
+  TimeZoneSeries {
+    tzsTimeZone = snd $ fromMaybe d $ find (not . timeZoneSummerOnly . snd) ts
+  , tzsTransitions = reverse ts
+  }
+mkTimeZoneSeries _ = Nothing
+
+-- | Create a `TimeZoneSeries` from a `TZ`
+toTimeZoneSeries :: TZ -> Maybe TimeZoneSeries
+{-# INLINE toTimeZoneSeries #-}
+toTimeZoneSeries tz@(TZ trans _ _) =
+  mkTimeZoneSeries $ map (mkTransition tz) [0..n]
+  where
+    n = (VU.length trans) - 1
+
+-- | Create a `TimeZoneSeries` relevant to the given `UTCTime` bounds for `TZ`
+toBoundedTimeZoneSeries :: TZ -> UTCTime -> UTCTime -> Maybe TimeZoneSeries
+{-# INLINE toBoundedTimeZoneSeries #-}
+toBoundedTimeZoneSeries tz@(TZ trans _ _) a b
+  | b > a = range a b
+  | b < a = range b a
+  | otherwise = Nothing
+  where
+    range j k = mkTimeZoneSeries $ map (mkTransition tz) [(idx j)+1..(idx k)]
+    idx s = binarySearch trans $ utcTimeToInt64 s
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
