@@ -50,12 +50,12 @@ Library
   GHC-Options: -Wall
   Build-Depends:
     base               >= 4        && < 5,
-    binary             >= 0.5      && < 0.9,
+    binary             >= 0.5      && < 0.11,
     bytestring         >= 0.9      && < 0.11,
     containers         >= 0.5      && < 0.7,
     data-default       >= 0.5      && < 0.8,
     deepseq            >= 1.1      && < 2,
-    time               >= 1.2      && < 1.9,
+    time               >= 1.2      && < 1.10,
     tzdata             >= 0.1      && < 0.2,
     vector             >= 0.9      && < 0.13
   if flag(template-haskell)
@@ -63,7 +63,7 @@ Library
       Data.Time.Zones.TH,
       Data.Time.Zones.Internal.CoerceTH
     Build-Depends:
-      template-haskell   >= 2.6      && < 2.15
+      template-haskell   >= 2.6      && < 2.16
     CPP-Options: -DTZ_TH
 
 
@@ -80,7 +80,7 @@ Test-Suite tests
     test-framework             >= 0.4     && < 1,
     test-framework-hunit       >= 0.2     && < 0.4,
     test-framework-th          >= 0.2     && < 0.4,
-    time                       >= 1.2     && < 1.9
+    time                       >= 1.2     && < 1.10
 
 Test-Suite testsSys
   Default-Language: Haskell2010
@@ -98,7 +98,7 @@ Test-Suite testsSys
     test-framework             >= 0.4     && < 1,
     test-framework-quickcheck2 >= 0.2     && < 0.4,
     test-framework-th          >= 0.2     && < 0.4,
-    time                       >= 1.2     && < 1.9
+    time                       >= 1.2     && < 1.10
 
 Test-Suite th-test
   Default-Language: Haskell2010
@@ -140,8 +140,8 @@ Benchmark bench
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    criterion                  >= 0.8     && < 1.4,
-    time                       >= 1.2     && < 1.9,
+    criterion                  >= 0.8     && < 1.6,
+    time                       >= 1.2     && < 1.10,
     timezone-olson,
     timezone-series
 
@@ -154,7 +154,7 @@ Benchmark bench_greg
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    criterion                  >= 0.8     && < 1.4,
+    criterion                  >= 0.8     && < 1.6,
     lens,
     thyme,
     time
@@ -168,5 +168,5 @@ Benchmark bench_conv
   Build-Depends:
     tz,
     base                       >= 4       && < 5,
-    criterion                  >= 0.8     && < 1.4,
+    criterion                  >= 0.8     && < 1.6,
     time
