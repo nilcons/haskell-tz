@@ -3,6 +3,7 @@
 /.stack-work
 /stack.yaml.lock
 *~
+TAGS
 *.o
 *.hi
 *.chi
