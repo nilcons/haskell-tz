@@ -9,6 +9,7 @@ import Data.Int
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Time.Zones
+import Data.Time.Zones.Read (pathForSystemTZ)
 import System.Environment
 import System.IO.Unsafe
 import Test.Framework.Providers.QuickCheck2
@@ -21,7 +22,13 @@ foreign import ccall safe "time.h tzset" c_tzset :: IO ()
 
 setupTZ :: String -> IO TZ
 setupTZ zoneName = do
-  setEnv "TZ" zoneName
+  -- tzset(3) doesn't necessarily understand TZDIR, since it is
+  -- not mandated by POSIX. To avoid trouble with non-glibc
+  -- libc implementations (musl, libSystem, ...) we set TZ
+  -- to an absolute path (with a leading ':') which all
+  -- POSIX-conforming implementations must support.
+  tzPath <- pathForSystemTZ zoneName
+  setEnv "TZ" $ ":" ++ tzPath
   c_tzset
   loadSystemTZ zoneName
 
