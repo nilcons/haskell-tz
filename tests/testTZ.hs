@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
@@ -5,6 +6,7 @@ module Main (main) where
 
 import Data.Time
 import Data.Time.Zones
+import Data.Time.Zones.Types
 import Test.Framework.Providers.HUnit
 import Test.Framework.TH
 import Test.HUnit hiding (Test, assert)
@@ -69,6 +71,16 @@ case_Paris_diffForAbbr = do
   diffForAbbr tz "WET" @?= Just 0
   diffForAbbr tz "LMT" @?= Just 561
   diffForAbbr tz "XYZ" @?= Nothing
+
+case_Berlin_hasPosixTzRules = do
+  tz <- loadTZFromDB "Europe/Berlin"
+  _tzPosixTz tz @?= ptz
+  where
+    h = 3600
+    ptz = Just $ PosixTz
+      { _posixTzStd = PosixZone "CET" (-h)
+      , _posixTzDst = Just (PosixZone "CEST" (-2*h), TzRule TzRuleM 3 5 0 (2*h), TzRule TzRuleM 10 5 0 (3*h))
+      }
 
 main :: IO ()
 main = $defaultMainGenerator
