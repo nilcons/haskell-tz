@@ -30,6 +30,8 @@ module Data.Time.Zones.Internal (
   picoToDiffTime,
   diffTimeToInteger,
   integerToDiffTime,
+  -- * Backwards combatibility
+  getEnvMaybe,
   ) where
 
 import Data.Bits ( Bits((.&.), shiftR) )
@@ -37,6 +39,8 @@ import Data.Fixed
 import Data.Int
 import Data.Time
 import qualified Data.Vector.Unboxed as VU
+import System.Environment ( getEnv )
+import System.IO.Error ( catchIOError, isDoesNotExistError )
 #ifdef TZ_TH
 import Data.Time.Zones.Internal.CoerceTH
 #else
@@ -201,3 +205,13 @@ integerToDiffTime = unsafeCoerce
 {-# INLINE integerToDiffTime #-}
 
 #endif
+
+--------------------------------------------------------------------------------
+-- Backwards compatibility
+
+-- | This is equivalent to 'lookupEnv', defined for compatibility with
+-- base < 4.6.0.0
+getEnvMaybe :: String -> IO (Maybe String)
+getEnvMaybe var =
+  fmap Just (getEnv var) `catchIOError`
+  (\e -> if isDoesNotExistError e then return Nothing else ioError e)

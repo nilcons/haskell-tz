@@ -35,8 +35,7 @@ import Data.Int
 import Data.Time.Zones.Files
 import Data.Time.Zones.Internal.PosixTz ( parsePosixTz )
 import Data.Time.Zones.Types
-import System.Environment
-import System.IO.Error
+import Data.Time.Zones.Internal (getEnvMaybe)
 
 -- Suppress 'redundant imports' warning
 import Prelude
@@ -86,11 +85,6 @@ loadLocalTZ = do
     Nothing -> loadTZFromFile "/etc/localtime"
     Just "" -> loadSystemTZ "UTC"
     Just z -> loadSystemTZ z
-
-getEnvMaybe :: String -> IO (Maybe String)
-getEnvMaybe var =
-  fmap Just (getEnv var) `catchIOError`
-  (\e -> if isDoesNotExistError e then return Nothing else ioError e)
 
 -- | Reads the corresponding file from the time zone database shipped
 -- with this package.

@@ -31,6 +31,7 @@ module Data.Time.Zones (
   loadLocalTZ,
   -- * Utilities
   diffForAbbr,
+  renderPosixTz,
   ) where
 
 import           Control.DeepSeq
@@ -39,6 +40,7 @@ import           Data.Data
 import           Data.Int (Int64)
 import           Data.Time
 import           Data.Time.Zones.Internal
+import           Data.Time.Zones.Internal.PosixTz (renderPosixTz)
 import           Data.Time.Zones.Read
 import           Data.Time.Zones.Types
 import qualified Data.Vector as VB
@@ -81,7 +83,9 @@ timeZoneFromRule :: PosixTz -> Int64 -> TimeZone
 timeZoneFromRule (PosixTz (PosixZone std stdoff) mdst) t = maybe stdtz f mdst
   where
     toDiffMins x = fromIntegral (-x) `div` 60
-    stdtz = TimeZone (toDiffMins stdoff) False (B8.unpack std)
+    stdtz = TimeZone (toDiffMins stdoff) False (mkname std)
+    -- 'TimeZone' does not use the angle bracket notation
+    mkname = B8.unpack . B8.dropWhile (== '<') . B8.dropWhileEnd (== '>')
 
     f (PosixZone dst dstoff, rbeg, rend) =
       let (y, _, _) = toGregorian . localDay $ int64PairToLocalTime t 0
@@ -90,7 +94,7 @@ timeZoneFromRule (PosixTz (PosixZone std stdoff) mdst) t = maybe stdtz f mdst
           isdst = if beg > end
                   then t < end || t >= beg
                   else t >= beg && t < end
-          dsttz = TimeZone (toDiffMins dstoff) True (B8.unpack dst)
+          dsttz = TimeZone (toDiffMins dstoff) True (mkname dst)
       in if isdst then dsttz else stdtz
 
 -- | Returns the `TimeZone` for the `TZ` at the given POSIX time.
