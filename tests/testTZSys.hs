@@ -3,7 +3,6 @@
 
 module Main (main) where
 
-import Data.Bits
 import Data.IORef
 import Data.Int
 import Data.Time
@@ -59,15 +58,16 @@ onceIO op = opWrap
 -- * And below around -2^55 the localtime_r C function starts failing
 -- with "value too large".
 checkTimeZone64 :: String -> Property
-checkTimeZone64 zoneName = prop
+checkTimeZone64 zoneName = withMaxSuccess 1000 prop
   where
     setup = onceIO $ setupTZ zoneName
     two31 = 2^(31 :: Int) - 1
     two47 = 2^(47 :: Int)
+    two55 = 2^(55 :: Int)
     prop = monadicIO $ do
       tz <- run setup
       ut <- pick $ oneof [arbitrary, choose (-two31, two31)]
-      pre $ ut < two47 && ut > -(1 `shiftL` 55)
+      pre $ ut < two47 && ut > -two55
       -- This is important. On 32 bit machines we want to limit
       -- testing to the Int range.
       pre $ ut > fromIntegral (minBound :: Int)
@@ -77,9 +77,9 @@ checkTimeZone64 zoneName = prop
 -- On the Int32 range of POSIX times we should mostly replicate the
 -- behavior.
 --
--- * After year 2038 we normally run into a range where the
--- envvar-like "rule" part of the TZif should be interpreted, which we
--- don't do yet.
+-- * After year 2038 we run into a range where the envvar-like "rule"
+-- part of the TZif is interpreted but above around 2^47 glibc starts
+-- returning wrong results.
 --
 -- * And the very first time diff in most of the TZif files is usually
 -- the "Local Mean Time", which is generally a fractional number of
@@ -88,14 +88,20 @@ checkTimeZone64 zoneName = prop
 -- around 1900, which happens to be less than -2^31 POSIX time.  But
 -- in some locations this transition falls within the Int32 range
 -- (eg. China), so we can supply another lower bound.
-checkLocalTime :: String -> Maybe Int32 -> Int32 -> Property
-checkLocalTime zoneName mLower = prop
+--
+-- Warning: seems to leak memory, be careful running for more than
+-- 100k successes.
+checkLocalTime :: String -> Maybe Int32 -> Int64 -> Property
+checkLocalTime zoneName mLower = withMaxSuccess 1000 . prop
   where
+    two31 = 2^(31 :: Int)
+    two47 = 2^(47 :: Int)
     setup = onceIO $ setupTZ zoneName
     prop ut = monadicIO $ do
+      pre $ ut < two47
       case mLower of
-        Nothing -> return ()
-        Just lower -> pre $ ut > lower
+        Nothing -> pre $ ut > -two31
+        Just lower -> pre $ ut > fromIntegral lower
       tz <- run setup
       let utcTime = posixSecondsToUTCTime $ fromIntegral ut
       timeZone <- run $ getTimeZone utcTime

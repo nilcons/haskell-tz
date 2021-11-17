@@ -113,5 +113,12 @@ case_Sydney_tzrule = do
     aest = TimeZone (10*60) False "AEST"
     aedt = TimeZone (11*60) True "AEDT"
 
+-- produced IDT due to bug in monthToSecs
+-- rule: IST-2IDT,M3.4.4/26,M10.5.0
+case_ptz_regression_1 = do
+  tz <- loadSystemTZ "Asia/Jerusalem"
+  timeZoneForPOSIX tz 252399456000 @?= TimeZone 120 False "IST" -- 9968-03-22 00:00:00 UTC
+
+
 main :: IO ()
 main = $defaultMainGenerator
