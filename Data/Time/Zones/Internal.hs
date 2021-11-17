@@ -119,7 +119,7 @@ ruleToSecs (TzRule ty m n d t) y =
           n1 = fromIntegral $ if n == 5 && d2+28 >= fromIntegral (daysInMonth isleap m)
                               then 4
                               else n
-          s2 = 86400 * (d2 + 7*(n1-1))
+          s2 = secsperday * (d2 + 7*(n1-1))
         in s1 + s2
 {-# INLINE ruleToSecs #-}
 
@@ -140,7 +140,7 @@ monthToSecs :: Bool -> Int -> Int
 monthToSecs isleap m =
   d * 86400
   where
-    d = VU.unsafeIndex sumdays m + if isleap && m > 2 then 1 else 0
+    d = VU.unsafeIndex sumdays m + if isleap && m >= 2 then 1 else 0
 
     sumdays :: VU.Vector Int
     sumdays = VU.fromList [ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ]
