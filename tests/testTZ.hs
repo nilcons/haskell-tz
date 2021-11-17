@@ -72,15 +72,46 @@ case_Paris_diffForAbbr = do
   diffForAbbr tz "LMT" @?= Just 561
   diffForAbbr tz "XYZ" @?= Nothing
 
-case_Berlin_hasPosixTzRules = do
+case_Berlin_hasTzRule = do
   tz <- loadTZFromDB "Europe/Berlin"
-  _tzPosixTz tz @?= ptz
+  _tzPosixTz tz @?= Just ptz
   where
     h = 3600
-    ptz = Just $ PosixTz
+    ptz = PosixTz
       { _posixTzStd = PosixZone "CET" (-h)
-      , _posixTzDst = Just (PosixZone "CEST" (-2*h), TzRule TzRuleM 3 5 0 (2*h), TzRule TzRuleM 10 5 0 (3*h))
+      , _posixTzDst = Just ( PosixZone "CEST" (-2*h)
+                           , TzRule TzRuleM  3 5 0 (2*h)
+                           , TzRule TzRuleM 10 5 0 (3*h)
+                           )
       }
+
+case_LosAngeles_tzrule = do
+  tz <- loadTZFromDB "America/Los_Angeles"
+
+  -- pst -> pdt
+  pst @?= timeZoneForUTCTime tz (mkUTC 2077 3 14  9 59 59)
+  pdt @?= timeZoneForUTCTime tz (mkUTC 2077 3 14 10  0  0)
+
+  -- pdt -> pst
+  pdt @?= timeZoneForUTCTime tz (mkUTC 2077 11 7  8 59 59)
+  pst @?= timeZoneForUTCTime tz (mkUTC 2077 11 7  9  0  0)
+  where
+    pst = TimeZone (-8*60) False "PST"
+    pdt = TimeZone (-7*60) True "PDT"
+
+case_Sydney_tzrule = do
+  tz <- loadTZFromDB "Australia/Sydney"
+
+  -- aedt -> aest
+  aedt @?= timeZoneForUTCTime tz (mkUTC 2077 4 3 15 59 59)
+  aest @?= timeZoneForUTCTime tz (mkUTC 2077 4 3 16  0  0)
+
+  -- aest -> aedt
+  aest @?= timeZoneForUTCTime tz (mkUTC 2077 10 2 15 59 59)
+  aedt @?= timeZoneForUTCTime tz (mkUTC 2077 10 2 16  0  0)
+  where
+    aest = TimeZone (10*60) False "AEST"
+    aedt = TimeZone (11*60) True "AEDT"
 
 main :: IO ()
 main = $defaultMainGenerator
