@@ -31,6 +31,7 @@ module Data.Time.Zones (
   loadLocalTZ,
   -- * Utilities
   diffForAbbr,
+  renderPosixTz,
   ) where
 
 import           Control.DeepSeq
@@ -39,30 +40,72 @@ import           Data.Data
 import           Data.Int (Int64)
 import           Data.Time
 import           Data.Time.Zones.Internal
+import           Data.Time.Zones.Internal.PosixTz (renderPosixTz)
 import           Data.Time.Zones.Read
 import           Data.Time.Zones.Types
 import qualified Data.Vector as VB
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.ByteString.Char8 as B8
 
 -- | Returns the time difference (in seconds) for TZ at the given
 -- POSIX time.
 diffForPOSIX :: TZ -> Int64 -> Int
 {-# INLINE diffForPOSIX #-}
-diffForPOSIX (TZ trans diffs _) t = VU.unsafeIndex diffs $ binarySearch trans t
+diffForPOSIX (TZ trans diffs _ mptz) t =
+  if t < VU.last trans
+  then useExplicit
+  else maybe useExplicit (`diffForPOSIXFromRule` t) mptz
+  where
+    useExplicit = VU.unsafeIndex diffs $ binarySearch trans t
 
+-- | Returns a time difference (in seconds) for `PosixTz` at given
+-- POSIX time.
+diffForPOSIXFromRule :: PosixTz -> Int64 -> Int
+{-# INLINE diffForPOSIXFromRule #-}
+diffForPOSIXFromRule ptz t =
+  diffMins * 60
+  where
+    TimeZone diffMins _ _ = timeZoneFromRule ptz t
+
+-- | Returns the `TimeZone` for given index of `TZ` data.
+--
+-- /Note/: This ignores POSIX-TZ rules.
 timeZoneForIx :: TZ -> Int -> TimeZone
 {-# INLINE timeZoneForIx #-}
-timeZoneForIx (TZ _ diffs infos) i = TimeZone diffMins isDst name
+timeZoneForIx (TZ _ diffs infos _) i = TimeZone diffMins isDst name
   where
     diffMins = VU.unsafeIndex diffs i `div` 60
     (isDst, name) = VB.unsafeIndex infos i
 
+-- | Returns the `TimeZone` for the `PosixTz` at given POSIX time.
+timeZoneFromRule :: PosixTz -> Int64 -> TimeZone
+{-# INLINE timeZoneFromRule #-}
+timeZoneFromRule (PosixTz (PosixZone std stdoff) mdst) t = maybe stdtz f mdst
+  where
+    toDiffMins x = fromIntegral (-x) `div` 60
+    stdtz = TimeZone (toDiffMins stdoff) False (mkname std)
+    -- 'TimeZone' does not use the angle bracket notation
+    mkname = B8.unpack . B8.dropWhile (== '<') . B8.dropWhileEnd (== '>')
+
+    f (PosixZone dst dstoff, rbeg, rend) =
+      let (y, _, _) = toGregorian . localDay $ int64PairToLocalTime t 0
+          beg = ruleToSecs rbeg (fromIntegral y) + fromIntegral stdoff
+          end = ruleToSecs rend (fromIntegral y) + fromIntegral dstoff
+          isdst = if beg > end
+                  then t < end || t >= beg
+                  else t >= beg && t < end
+          dsttz = TimeZone (toDiffMins dstoff) True (mkname dst)
+      in if isdst then dsttz else stdtz
+
 -- | Returns the `TimeZone` for the `TZ` at the given POSIX time.
 timeZoneForPOSIX :: TZ -> Int64 -> TimeZone
 {-# INLINABLE timeZoneForPOSIX #-}
-timeZoneForPOSIX tz@(TZ trans _ _) t = timeZoneForIx tz i
+timeZoneForPOSIX tz@(TZ trans _ _ mptz) t =
+  if t < VU.last trans
+  then useExplicit
+  else maybe useExplicit (`timeZoneFromRule` t) mptz
   where
-    i = binarySearch trans t
+    useExplicit = timeZoneForIx tz (binarySearch trans t)
 
 -- | Returns the `TimeZone` for the `TZ` at the given `UTCTime`.
 timeZoneForUTCTime :: TZ -> UTCTime -> TimeZone
@@ -151,7 +194,7 @@ instance NFData FromLocal where
 -- TODO(klao): check that these assuptions hold.
 localToPOSIX :: TZ -> Int64 -> FromLocal
 {-# INLINABLE localToPOSIX #-}
-localToPOSIX (TZ trans diffs _) !lTime = res
+localToPOSIX (TZ trans diffs _ _) !lTime = res
   where
     lBound = lTime - 86400
     ix = binarySearch trans lBound
@@ -202,7 +245,7 @@ instance NFData LocalToUTCResult where
 
 -- TODO(klao): better name
 localTimeToUTCFull :: TZ -> LocalTime -> LocalToUTCResult
-localTimeToUTCFull tz@(TZ _ diffs _) localT = res
+localTimeToUTCFull tz@(TZ _ diffs _ _) localT = res
   where
     (t,ps) = localTimeToInt64Pair localT
     addDiff i = int64PairToUTCTime t' ps
@@ -239,7 +282,7 @@ localTimeToUTCTZ tz lt =
 -- on the abbreviation.)
 diffForAbbr :: TZ -> String -> Maybe Int
 {-# INLINABLE diffForAbbr #-}
-diffForAbbr (TZ _ diffs infos) s =
+diffForAbbr (TZ _ diffs infos _) s =
   case VB.findIndex ((==) s . snd) $ VB.reverse infos of
     Nothing -> Nothing
     Just i -> Just $ VU.unsafeIndex diffs (VU.length diffs - 1 - i)

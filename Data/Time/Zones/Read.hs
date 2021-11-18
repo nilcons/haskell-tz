@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 {- |
 Module      : Data.Time.Zones.Read
 Copyright   : (C) 2014 Mihaly Barasz
@@ -5,9 +8,6 @@ License     : Apache-2.0, see LICENSE
 Maintainer  : Mihaly Barasz <klao@nilcons.com>
 Stability   : experimental
 -}
-
-{-# LANGUAGE OverloadedStrings #-}
-
 module Data.Time.Zones.Read (
   -- * Various ways of loading `TZ`
   loadTZFromFile,
@@ -24,17 +24,18 @@ import Control.Applicative
 import Control.Exception (assert)
 import Control.Monad
 import Data.Binary
-import Data.Binary.Get (getByteString, getWord32be, getWord64be, runGet, skip)
+import Data.Binary.Get (getByteString, getWord32be, getWord64be, runGet, skip, lookAhead)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.ByteString.Builder as BB
 import Data.Maybe
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector as VB
 import Data.Int
 import Data.Time.Zones.Files
+import Data.Time.Zones.Internal.PosixTz ( parsePosixTz )
 import Data.Time.Zones.Types
-import System.Environment
-import System.IO.Error
+import Data.Time.Zones.Internal (getEnvMaybe)
 
 -- Suppress 'redundant imports' warning
 import Prelude
@@ -85,11 +86,6 @@ loadLocalTZ = do
     Just "" -> loadSystemTZ "UTC"
     Just z -> loadSystemTZ z
 
-getEnvMaybe :: String -> IO (Maybe String)
-getEnvMaybe var =
-  fmap Just (getEnv var) `catchIOError`
-  (\e -> if isDoesNotExistError e then return Nothing else ioError e)
-
 -- | Reads the corresponding file from the time zone database shipped
 -- with this package.
 loadTZFromDB :: String -> IO TZ
@@ -106,8 +102,9 @@ olsonGet = do
     () | version == '\0' -> olsonGetWith 4 getTime32
     () | version `elem` ['2', '3'] -> do
       skipOlson0 >> void olsonHeader
-      olsonGetWith 8 getTime64
-      -- TODO(klao): read the rule string
+      o <- olsonGetWith 8 getTime64
+      ptz <- getPosixTz
+      pure $ o { _tzPosixTz = Just ptz }
     _ -> fail $ "olsonGet: invalid version character: " ++ show version
 
 parseOlson :: BL.ByteString -> TZ
@@ -166,7 +163,41 @@ olsonGetWith szTime getTime = do
           first = head $ filter (not . isDst) lInfos ++ lInfos
       diffs = VU.map gmtOff eInfos
       tzInfos = VB.fromListN (VU.length eInfos) $ map isDstName $ VU.toList eInfos
-  return $ TZ eTransitions diffs tzInfos
+  return $ TZ eTransitions diffs tzInfos Nothing
+
+getPosixTz :: Get PosixTz
+getPosixTz = do
+  nlOrFail
+  bs <- getWhile maxTzBytes (/= 10)
+  nlOrFail
+  case parsePosixTz bs of
+    Right x -> pure x
+    Left err -> fail err
+  where
+    -- Arbitrary limit, we do not expect TZ strings to be larger than this,
+    -- if an unusually large string is encountered we want to fail early instead
+    -- of trying to parse it.
+    maxTzBytes = 512
+
+nlOrFail :: Get ()
+nlOrFail =
+  getWord8 >>= \case
+    10 -> pure ()
+    _  -> fail "expected a newline"
+
+-- TODO: find a better way?
+getWhile :: Int -> (Word8 -> Bool) -> Get BS.ByteString
+getWhile maxlen f =
+  BL.toStrict . BB.toLazyByteString <$> go maxlen
+  where
+    go 0 = fail "input too large"
+    go n = do
+      w <- lookAhead getWord8
+      if f w
+      then do
+        x <- BB.word8 <$> getWord8
+        (x <>) <$> go (n - 1)
+      else pure mempty
 
 abbrForInd :: Int -> BS.ByteString -> String
 abbrForInd i = BS.unpack . BS.takeWhile (/= '\0') . BS.drop i

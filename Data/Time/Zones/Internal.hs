@@ -18,6 +18,11 @@ module Data.Time.Zones.Internal (
   localTimeToInt64Pair,
   int64PairToUTCTime,
   int64PairToLocalTime,
+  -- * POSIX-TZ helper functions
+  ruleToSecs,
+  yearToSecs,
+  daysInMonth,
+  monthToSecs,
   -- * Low-level \"coercions\"
   picoToInteger,
   integerToPico,
@@ -25,16 +30,24 @@ module Data.Time.Zones.Internal (
   picoToDiffTime,
   diffTimeToInteger,
   integerToDiffTime,
+  -- * Backwards combatibility
+  getEnvMaybe,
   ) where
 
+import Data.Bits ( Bits((.&.), shiftR) )
 import Data.Fixed
 import Data.Int
 import Data.Time
+import qualified Data.Vector.Unboxed as VU
+import System.Environment ( getEnv )
+import System.IO.Error ( catchIOError, isDoesNotExistError )
 #ifdef TZ_TH
 import Data.Time.Zones.Internal.CoerceTH
 #else
 import Unsafe.Coerce
 #endif
+
+import Data.Time.Zones.Types
 
 utcTimeToInt64Pair :: UTCTime -> (Int64, Int64)
 utcTimeToInt64Pair (UTCTime (ModifiedJulianDay d) t)
@@ -78,6 +91,60 @@ utcTimeToInt64 (UTCTime (ModifiedJulianDay d) t)
   where
     unixEpochDay = 40587
 {-# INLINE utcTimeToInt64 #-}
+
+--------------------------------------------------------------------------------
+-- POSIX-TZ helper functions
+
+-- | Convert 'TzRule' plus year to number of seconds since epoch
+--
+-- See musl rule_to_secs()
+ruleToSecs :: TzRule -> Int64 -> Int64
+ruleToSecs (TzRule ty m n d t) y =
+  ys + ms + fromIntegral t
+  where
+    secsperday = 86400
+    isleap = isLeapYear (fromIntegral y)
+    ys = yearToSecs y
+    ms = case ty of
+      TzRuleJ -> fromIntegral (if not isleap || d < 60 then d - 1 else d) * secsperday
+      TzRuleN -> fromIntegral d * secsperday
+      TzRuleM ->
+        let
+          -- s1 = seconds until start of the month
+          s1 = fromIntegral $ monthToSecs isleap (m - 1)
+          t0 = ys + s1
+          wday = ((t0 + 4*secsperday) `mod` (7*secsperday)) `div` secsperday
+          d1 = fromIntegral d - wday
+          d2 = if d1 < 0 then d1 + 7 else d1
+          n1 = fromIntegral $ if n == 5 && d2+28 >= fromIntegral (daysInMonth isleap m)
+                              then 4
+                              else n
+          s2 = secsperday * (d2 + 7*(n1-1))
+        in s1 + s2
+{-# INLINE ruleToSecs #-}
+
+-- | Number of seconds since epoch for year
+yearToSecs :: Int64 -> Int64
+yearToSecs y64 =
+  utcTimeToInt64 $ UTCTime (fromGregorian (fromIntegral y64) 1 1) 0
+{-# INLINE yearToSecs #-}
+
+-- | Number of days in month
+daysInMonth :: Bool -> Int -> Int
+daysInMonth isleap 2 = 28 + if isleap then 1 else 0
+daysInMonth _      m = 30 + ((0xad5 `shiftR` (m - 1)) .&. 1)
+{-# INLINE daysInMonth #-}
+
+-- | Number of seconds between start of year and end of month (1-12)
+monthToSecs :: Bool -> Int -> Int
+monthToSecs isleap m =
+  d * 86400
+  where
+    d = VU.unsafeIndex sumdays m + if isleap && m >= 2 then 1 else 0
+
+    sumdays :: VU.Vector Int
+    sumdays = VU.fromList [ 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 ]
+{-# INLINE monthToSecs #-}
 
 --------------------------------------------------------------------------------
 -- Low-level zero-overhead conversions.
@@ -138,3 +205,13 @@ integerToDiffTime = unsafeCoerce
 {-# INLINE integerToDiffTime #-}
 
 #endif
+
+--------------------------------------------------------------------------------
+-- Backwards compatibility
+
+-- | This is equivalent to 'lookupEnv', defined for compatibility with
+-- base < 4.6.0.0
+getEnvMaybe :: String -> IO (Maybe String)
+getEnvMaybe var =
+  fmap Just (getEnv var) `catchIOError`
+  (\e -> if isDoesNotExistError e then return Nothing else ioError e)
