@@ -5,11 +5,17 @@ module Main (main) where
 
 import Data.IORef
 import Data.Int
+import Data.Foldable (for_)
+import Data.Maybe (isJust)
 import Data.Time
 import Data.Time.Clock.POSIX
 import Data.Time.Zones
+import Data.Time.Zones.Read
+import Data.Time.Zones.Types
 import System.Environment
+import System.FilePath.Find
 import System.IO.Unsafe
+import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2
 import Test.Framework.TH
 import Test.HUnit hiding (Test, assert)
@@ -107,6 +113,28 @@ checkLocalTime zoneName mLower = withMaxSuccess 1000 . prop
       timeZone <- run $ getTimeZone utcTime
       run $ utcToLocalTimeTZ tz utcTime @?= utcToLocalTime timeZone utcTime
 
+-- | Check if all zone files in system directory parse
+--
+-- This is useful to verify parsing but overkill to run on every
+-- test or install so first parameter says if we want to run or not.
+--
+-- This can fail if any of the files in listed dirs is in v1 format
+-- which does not have POSIX-TZ strings.
+checkAllParse ::  IO ()
+checkAllParse = do
+  tzdir <- pathForSystemTZ ""
+  for_ dirs $ \dir -> do
+    let curdir = tzdir <> "/" <> dir
+    xs <- find always (fileType ==? RegularFile) curdir
+    for_ xs $ \p -> do
+      tz <- loadTZFromFile p
+      assertBool ("missing POSIX-TZ (v1 file) or parsing failure: " <> p) (isJust $ _tzPosixTz tz)
+  where
+    dirs = [ "Africa", "America", "Antarctica", "Arctic"
+           , "Asia", "Atlantic", "Australia", "Brazil"
+           , "Canada", "Chile", "Etc", "Europe", "Indian"
+           , "Mexico", "Pacific", "US"
+           ]
 
 prop_Budapest_correct_TimeZone = checkTimeZone64 "Europe/Budapest"
 prop_New_York_correct_TimeZone = checkTimeZone64 "America/New_York"
@@ -123,6 +151,9 @@ prop_Shanghai_correct_LocalTime = checkLocalTime "Asia/Shanghai" $ Just (-132549
 prop_Jerusalem_correct_LocalTime = checkLocalTime "Asia/Jerusalem" $ Just (-1641003641)
 prop_Antarctica_Palmer_correct_LocalTime = checkLocalTime "Antarctica/Palmer" Nothing
 prop_Melbourne_correct_LocalTime = checkLocalTime "Australia/Melbourne" Nothing
+
+-- disabled by default
+-- case_All_parse = checkAllParse True
 
 main :: IO ()
 main = $defaultMainGenerator
