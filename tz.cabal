@@ -63,7 +63,7 @@ Library
       Data.Time.Zones.TH,
       Data.Time.Zones.Internal.CoerceTH
     Build-Depends:
-      template-haskell   >= 2.6      && < 2.17
+      template-haskell   >= 2.6      && < 2.19
     CPP-Options: -DTZ_TH
 
 

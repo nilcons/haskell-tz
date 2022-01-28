@@ -31,6 +31,14 @@ getNewTypeCon newTy = do
 constructNewType :: Name -> Q Exp
 constructNewType newTy = ConE `fmap` getNewTypeCon newTy
 
+mkConP :: Name -> [Pat] -> Pat
+mkConP name pats =
+#if MIN_VERSION_template_haskell(2,18,0)
+  ConP name [] pats
+#else
+  ConP name pats
+#endif
+
 destructNewType :: Name -> Q Exp
 destructNewType newTy = do
   con <- getNewTypeCon newTy
@@ -39,4 +47,4 @@ destructNewType newTy = do
   return $
     LamE [VarP lamV]
     (CaseE (VarE lamV) [
-        Match (ConP con [VarP patV]) (NormalB (VarE patV)) []])
+        Match (mkConP con [VarP patV]) (NormalB (VarE patV)) []])
