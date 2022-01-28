@@ -2,7 +2,7 @@
 Module      : Data.Time.Zones.Internal
 Copyright   : (C) 2014 Mihaly Barasz
 License     : Apache-2.0, see LICENSE
-Maintainer  : Mihaly Barasz <klao@nilcons.com>
+Maintainer  : Janus Troelsen <ysangkok@gmail.com>
 Stability   : experimental
 -}
 
