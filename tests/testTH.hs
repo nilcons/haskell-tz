@@ -2,9 +2,8 @@
 
 import Data.Time.Zones
 import Data.Time.Zones.TH
-import Test.Framework.Providers.HUnit
-import Test.Framework.TH
-import Test.HUnit hiding (Test, assert)
+import Test.Tasty.HUnit
+import Test.Tasty.TH
 
 tzBudapest :: TZ
 tzBudapest = $(includeTZFromDB "Europe/Budapest")

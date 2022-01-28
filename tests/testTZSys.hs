@@ -12,10 +12,9 @@ import Data.Time.Zones
 import Data.Time.Zones.Read (pathForSystemTZ)
 import System.Environment
 import System.IO.Unsafe
-import Test.Framework.Providers.QuickCheck2
-import Test.Framework.TH
-import Test.HUnit hiding (Test, assert)
-import Test.QuickCheck
+import Test.Tasty.HUnit
+import Test.Tasty.TH
+import Test.Tasty.QuickCheck
 import Test.QuickCheck.Monadic
 
 foreign import ccall safe "time.h tzset" c_tzset :: IO ()

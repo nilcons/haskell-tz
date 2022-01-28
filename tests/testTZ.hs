@@ -5,9 +5,8 @@ module Main (main) where
 
 import Data.Time
 import Data.Time.Zones
-import Test.Framework.Providers.HUnit
-import Test.Framework.TH
-import Test.HUnit hiding (Test, assert)
+import Test.Tasty.TH
+import Test.Tasty.HUnit
 
 case_utcTZ_is_utc = timeZoneForPOSIX utcTZ 0 @?= utc
 

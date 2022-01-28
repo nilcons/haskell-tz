@@ -3,9 +3,8 @@
 
 import Data.Time.Zones
 import Data.Time.Zones.All
-import Test.Framework.Providers.HUnit
-import Test.Framework.TH
-import Test.HUnit hiding (Test, assert)
+import Test.Tasty.HUnit
+import Test.Tasty.TH
 
 case_Budapest_is_Budapest :: IO ()
 case_Budapest_is_Budapest = do
