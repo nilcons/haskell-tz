@@ -17,8 +17,8 @@ Description:
   in a /pure/ and /efficient/ way.
   .
   We also provide platform-independent and/or compiled-in access to
-  the standard Time Zone Dabase by the means of the companion @tzdata@
-  package <http://hackage.haskell.org/package/tzdata>.
+  the standard Time Zone Database by the means of the companion @tzdata@
+  package <https://hackage.haskell.org/package/tzdata>.
   .
   The package is currently in an alpha phase, I'm still experimenting
   with different ideas wrt. scope\/API\/implementation\/etc. All
