@@ -81,7 +81,7 @@ toOrdinalDateDivMod !mjd = YD year yd
 -- So, to find out the calendar year for a given day, we calculate
 -- which nominal year does its start fall. And, if we are not too
 -- close to the end of year, we have the right calendar
--- year. Othewise, we just check whether it falls within the next
+-- year. Otherwise, we just check whether it falls within the next
 -- calendar year.
 --
 -- Notes: to make the reasoning simpler and more efficient ('quot' is

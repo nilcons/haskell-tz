@@ -36,7 +36,7 @@ case_Budapest_LocalToUTC = do
   -- Handle time in winter->summer transition:
   localTimeToUTCFull tz (mkLocal 2014 03 30  02 15 15) @?=
     LTUNone (mkUTC 2014 03 30  01 15 15) zWinter
-  -- That utc time is acually in dst already:
+  -- That utc time is actually in dst already:
   localTimeToUTCFull tz (mkLocal 2014 03 30  03 15 15) @?=
     LTUUnique (mkUTC 2014 03 30  01 15 15) zSummer
 

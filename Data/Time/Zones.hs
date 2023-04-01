@@ -148,7 +148,7 @@ instance NFData FromLocal where
 -- As a consequence, a local time might correspond to two different
 -- points in time, but never three.
 --
--- TODO(klao): check that these assuptions hold.
+-- TODO(klao): check that these assumptions hold.
 localToPOSIX :: TZ -> Int64 -> FromLocal
 {-# INLINABLE localToPOSIX #-}
 localToPOSIX (TZ trans diffs _) !lTime = res
